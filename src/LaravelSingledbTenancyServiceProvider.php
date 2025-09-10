@@ -2,9 +2,9 @@
 
 namespace Roberts\LaravelSingledbTenancy;
 
+use Roberts\LaravelSingledbTenancy\Commands\LaravelSingledbTenancyCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Roberts\LaravelSingledbTenancy\Commands\LaravelSingledbTenancyCommand;
 
 class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
 {
