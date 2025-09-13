@@ -26,7 +26,7 @@ class TenantFactory extends Factory
      */
     public function suspended(): static
     {
-        return $this->afterCreating(function (Tenant $tenant) {
+        return $this->afterCreating(function ($tenant) {
             $tenant->delete();
         });
     }
