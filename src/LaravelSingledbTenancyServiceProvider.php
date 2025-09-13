@@ -19,7 +19,7 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
             ->name('laravel-singledb-tenancy')
             ->hasConfigFile()
             ->hasViews()
-            ->hasMigration('create_laravel_singledb_tenancy_table')
+            ->hasMigration('create_tenants_table')
             ->hasCommand(LaravelSingledbTenancyCommand::class);
     }
 }
