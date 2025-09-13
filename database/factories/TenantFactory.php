@@ -17,7 +17,7 @@ class TenantFactory extends Factory
         return [
             'name' => $name,
             'slug' => Str::slug($name),
-            'domain' => $this->faker->unique()->domainWord() . '.test',
+            'domain' => $this->faker->unique()->domainWord().'.test',
         ];
     }
 

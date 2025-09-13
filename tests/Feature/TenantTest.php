@@ -7,7 +7,7 @@ it('can create a tenant', function () {
         'name' => 'Test Company',
         'domain' => 'domain.test',
     ]);
-    
+
     // Don't set slug, let it auto-generate
     $tenant->slug = null;
     $tenant->save();

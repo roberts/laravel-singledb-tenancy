@@ -59,7 +59,7 @@ class Tenant extends Model
      */
     public function isActive(): bool
     {
-        return !$this->trashed();
+        return ! $this->trashed();
     }
 
     /**
@@ -84,8 +84,8 @@ class Tenant extends Model
     public function url(string $path = ''): string
     {
         $protocol = request()->isSecure() ? 'https://' : 'http://';
-        
-        return $protocol . $this->domain . ($path ? '/' . ltrim($path, '/') : '');
+
+        return $protocol.$this->domain.($path ? '/'.ltrim($path, '/') : '');
     }
 
     /**
