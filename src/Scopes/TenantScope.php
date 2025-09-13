@@ -18,12 +18,25 @@ class TenantScope implements Scope
         $tenantId = current_tenant_id();
 
         if ($tenantId !== null) {
-            $builder->where($model->getQualifiedTenantColumn(), $tenantId);
+            $tenantColumn = $this->getTenantColumn($model);
+            $builder->where($model->qualifyColumn($tenantColumn), $tenantId);
         } else {
             // When no tenant context is set, return no results by default
             // This enforces tenant isolation - data should only be accessible with proper tenant context
             $builder->whereRaw('1 = 0');
         }
+    }
+
+    /**
+     * Get the tenant column name for the given model.
+     */
+    protected function getTenantColumn(Model $model): string
+    {
+        if (method_exists($model, 'getTenantColumn')) {
+            return $model->getTenantColumn();
+        }
+
+        return config('singledb-tenancy.tenant_column', 'tenant_id');
     }
 
     /**
