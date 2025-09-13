@@ -17,7 +17,7 @@ it('resolves tenant by subdomain', function () {
 
     $request = Request::create('https://acme.app.com/dashboard');
     $resolver = app(SubdomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->not()->toBeNull();
@@ -27,7 +27,7 @@ it('resolves tenant by subdomain', function () {
 it('returns null for base domain without subdomain', function () {
     $request = Request::create('https://app.com/dashboard');
     $resolver = app(SubdomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->toBeNull();
@@ -38,7 +38,7 @@ it('returns null for reserved subdomains', function () {
 
     $request = Request::create('https://api.app.com/v1/users');
     $resolver = app(SubdomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->toBeNull();
@@ -47,7 +47,7 @@ it('returns null for reserved subdomains', function () {
 it('returns null for multi-level subdomains', function () {
     $request = Request::create('https://api.tenant.app.com/dashboard');
     $resolver = app(SubdomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->toBeNull();
@@ -62,7 +62,7 @@ it('returns null when subdomain resolution is disabled', function () {
 
     $request = Request::create('https://acme.app.com/dashboard');
     $resolver = app(SubdomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->toBeNull();
@@ -71,7 +71,7 @@ it('returns null when subdomain resolution is disabled', function () {
 it('returns null when host does not match base domain', function () {
     $request = Request::create('https://acme.different.com/dashboard');
     $resolver = app(SubdomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->toBeNull();
@@ -80,16 +80,16 @@ it('returns null when host does not match base domain', function () {
 it('returns null when no tenant matches subdomain', function () {
     $request = Request::create('https://nonexistent.app.com/dashboard');
     $resolver = app(SubdomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->toBeNull();
 });
 
 it('handles requests without host gracefully', function () {
-    $request = new Request();
+    $request = new Request;
     $resolver = app(SubdomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->toBeNull();
@@ -98,15 +98,15 @@ it('handles requests without host gracefully', function () {
 it('extracts correct subdomain from various hosts', function () {
     $tenant = Tenant::factory()->create(['slug' => 'test']);
     $resolver = app(SubdomainResolver::class);
-    
+
     // Valid subdomain
     $request = Request::create('https://test.app.com/dashboard');
     expect($resolver->resolve($request))->not()->toBeNull();
-    
+
     // Invalid - no subdomain
     $request = Request::create('https://app.com/dashboard');
     expect($resolver->resolve($request))->toBeNull();
-    
+
     // Invalid - different domain
     $request = Request::create('https://test.other.com/dashboard');
     expect($resolver->resolve($request))->toBeNull();

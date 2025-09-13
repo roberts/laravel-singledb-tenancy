@@ -18,7 +18,7 @@ it('resolves tenant by domain', function () {
 
     $request = Request::create('https://example.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     $response = $middleware->handle($request, function ($req) {
         return response('OK');
     });
@@ -30,14 +30,14 @@ it('resolves tenant by domain', function () {
 
 it('resolves tenant by subdomain', function () {
     config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.com']);
-    
+
     $tenant = Tenant::factory()->create([
         'slug' => 'acme',
     ]);
 
     $request = Request::create('https://acme.app.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     $response = $middleware->handle($request, function ($req) {
         return response('OK');
     });
@@ -55,7 +55,7 @@ it('ignores reserved subdomains', function () {
 
     $request = Request::create('https://api.app.com/v1/users');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     $response = $middleware->handle($request, function ($req) {
         return response('OK');
     });
@@ -69,7 +69,7 @@ it('continues without tenant when none resolved and handling is continue', funct
 
     $request = Request::create('https://nonexistent.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     $response = $middleware->handle($request, function ($req) {
         return response('OK');
     });
@@ -83,7 +83,7 @@ it('throws exception when no tenant resolved and handling is exception', functio
 
     $request = Request::create('https://nonexistent.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     expect(fn () => $middleware->handle($request, function ($req) {
         return response('OK');
     }))->toThrow(RuntimeException::class, 'Could not resolve tenant from request');
@@ -98,7 +98,7 @@ it('uses specific resolution strategies when provided', function () {
     // Test domain-only resolution
     $request = Request::create('https://example.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     $response = $middleware->handle($request, function ($req) {
         return response('OK');
     }, 'domain');
@@ -113,7 +113,7 @@ it('uses forced tenant in development', function () {
 
     $request = Request::create('https://any-domain.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     $response = $middleware->handle($request, function ($req) {
         return response('OK');
     });
@@ -131,13 +131,13 @@ it('handles suspended tenant by showing page', function () {
     $tenant = Tenant::factory()->create([
         'domain' => 'example.com',
     ]);
-    
+
     // Suspend the tenant (soft delete)
     $tenant->suspend();
 
     $request = Request::create('https://example.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     $response = $middleware->handle($request, function ($req) {
         return response('Should not reach here');
     });
@@ -154,13 +154,13 @@ it('handles suspended tenant by blocking access', function () {
     $tenant = Tenant::factory()->create([
         'domain' => 'example.com',
     ]);
-    
-    // Suspend the tenant (soft delete) 
+
+    // Suspend the tenant (soft delete)
     $tenant->suspend();
 
     $request = Request::create('https://example.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     $response = $middleware->handle($request, function ($req) {
         return response('Should not reach here');
     });
@@ -185,7 +185,7 @@ it('prioritizes domain over subdomain resolution', function () {
 
     $request = Request::create('https://acme.app.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     $response = $middleware->handle($request, function ($req) {
         return response('OK');
     });
@@ -204,7 +204,7 @@ it('falls back to subdomain when domain resolution fails', function () {
     // No domain match, should fall back to subdomain
     $request = Request::create('https://acme.app.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
-    
+
     $response = $middleware->handle($request, function ($req) {
         return response('OK');
     });

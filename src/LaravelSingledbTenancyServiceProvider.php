@@ -59,7 +59,7 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
     protected function registerMiddleware(): void
     {
         $router = $this->app->make(Router::class);
-        
+
         $router->aliasMiddleware('tenant', TenantResolutionMiddleware::class);
     }
 }

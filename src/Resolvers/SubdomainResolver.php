@@ -12,8 +12,7 @@ class SubdomainResolver
 {
     public function __construct(
         private TenantCache $cache
-    ) {
-    }
+    ) {}
 
     /**
      * Resolve tenant by request subdomain.
@@ -51,7 +50,7 @@ class SubdomainResolver
 
         // Remove the base domain to get subdomain
         $baseDomainWithDot = ".{$baseDomain}";
-        
+
         if (! str_ends_with($host, $baseDomainWithDot)) {
             return null;
         }

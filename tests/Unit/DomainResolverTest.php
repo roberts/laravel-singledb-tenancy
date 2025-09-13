@@ -13,7 +13,7 @@ it('resolves tenant by exact domain match', function () {
 
     $request = Request::create('https://example.com/dashboard');
     $resolver = app(DomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->not()->toBeNull();
@@ -23,7 +23,7 @@ it('resolves tenant by exact domain match', function () {
 it('returns null when no domain matches', function () {
     $request = Request::create('https://nonexistent.com/dashboard');
     $resolver = app(DomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->toBeNull();
@@ -38,16 +38,16 @@ it('returns null when domain resolution is disabled', function () {
 
     $request = Request::create('https://example.com/dashboard');
     $resolver = app(DomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->toBeNull();
 });
 
 it('handles requests without host gracefully', function () {
-    $request = new Request();
+    $request = new Request;
     $resolver = app(DomainResolver::class);
-    
+
     $resolved = $resolver->resolve($request);
 
     expect($resolved)->toBeNull();

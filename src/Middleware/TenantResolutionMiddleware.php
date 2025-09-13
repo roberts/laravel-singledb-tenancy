@@ -24,8 +24,7 @@ class TenantResolutionMiddleware
 
     public function __construct(
         private TenantContext $tenantContext
-    ) {
-    }
+    ) {}
 
     /**
      * Handle an incoming request.
@@ -35,11 +34,12 @@ class TenantResolutionMiddleware
         // Check for forced tenant in development
         if ($forcedTenant = $this->getForcedTenant()) {
             $this->tenantContext->set($forcedTenant);
+
             return $next($request);
         }
 
         // Determine which strategies to use
-        $strategiesToUse = empty($strategies) 
+        $strategiesToUse = empty($strategies)
             ? $this->getDefaultStrategies()
             : $strategies;
 
@@ -53,6 +53,7 @@ class TenantResolutionMiddleware
                 }
 
                 $this->tenantContext->set($tenant);
+
                 return $next($request);
             }
         }

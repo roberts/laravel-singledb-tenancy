@@ -12,8 +12,7 @@ class TenantRouteManager
     public function __construct(
         private Router $router,
         private TenantCache $cache
-    ) {
-    }
+    ) {}
 
     /**
      * Load routes for the given tenant.
@@ -22,6 +21,7 @@ class TenantRouteManager
     {
         if (! $tenant) {
             $this->loadDefaultRoutes();
+
             return;
         }
 

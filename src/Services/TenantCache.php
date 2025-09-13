@@ -11,8 +11,7 @@ class TenantCache
 {
     public function __construct(
         private CacheManager $cache
-    ) {
-    }
+    ) {}
 
     /**
      * Get tenant by domain from cache or database.

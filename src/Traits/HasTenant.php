@@ -19,6 +19,7 @@ use Roberts\LaravelSingledbTenancy\Scopes\TenantScope;
  * - Allows for tenant column customization
  *
  * @mixin Model
+ *
  * @phpstan-ignore trait.unused
  */
 trait HasTenant

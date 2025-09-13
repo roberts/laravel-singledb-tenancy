@@ -12,8 +12,7 @@ class DomainResolver
 {
     public function __construct(
         private TenantCache $cache
-    ) {
-    }
+    ) {}
 
     /**
      * Resolve tenant by request domain.
