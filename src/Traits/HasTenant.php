@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Roberts\LaravelSingledbTenancy\Traits;
 
-use Roberts\LaravelSingledbTenancy\Models\Tenant;
-use Roberts\LaravelSingledbTenancy\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Roberts\LaravelSingledbTenancy\Models\Tenant;
+use Roberts\LaravelSingledbTenancy\Scopes\TenantScope;
 
 /**
  * Trait HasTenant
@@ -28,7 +28,7 @@ trait HasTenant
     protected static function bootHasTenant(): void
     {
         // Add the TenantScope global scope
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
 
         // Automatically set tenant_id when creating models
         static::creating(function (Model $model): void {
@@ -71,7 +71,7 @@ trait HasTenant
     /**
      * Scope a query to include models for all tenants.
      *
-     * @param \Illuminate\Database\Eloquent\Builder<static> $query
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
      * @return \Illuminate\Database\Eloquent\Builder<static>
      */
     public function scopeForAllTenants($query)
@@ -82,14 +82,13 @@ trait HasTenant
     /**
      * Scope a query to only include models for the specified tenant.
      *
-     * @param \Illuminate\Database\Eloquent\Builder<static> $query
-     * @param int|Tenant $tenant
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
      * @return \Illuminate\Database\Eloquent\Builder<static>
      */
     public function scopeForTenant($query, int|Tenant $tenant)
     {
         $tenantId = $tenant instanceof Tenant ? $tenant->id : $tenant;
-        
+
         return $query->withoutGlobalScope(TenantScope::class)
             ->where($this->getQualifiedTenantColumn(), $tenantId);
     }

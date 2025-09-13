@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
-use Roberts\LaravelSingledbTenancy\Scopes\TenantScope;
 use Roberts\LaravelSingledbTenancy\Tests\Models\Post;
 
 beforeEach(function () {
@@ -109,8 +108,8 @@ it('provides tenant relationship', function () {
 });
 
 it('returns correct tenant column name', function () {
-    $post = new Post();
-    
+    $post = new Post;
+
     expect($post->getTenantColumn())->toBe('tenant_id');
     expect($post->getQualifiedTenantColumn())->toBe('posts.tenant_id');
 });
@@ -118,7 +117,7 @@ it('returns correct tenant column name', function () {
 it('does not automatically assign tenant_id if already set', function () {
     $tenant1 = Tenant::factory()->create();
     $tenant2 = Tenant::factory()->create();
-    
+
     tenant_context()->set($tenant1);
 
     // Explicitly set a different tenant_id
@@ -134,7 +133,8 @@ it('does not automatically assign tenant_id if already set', function () {
 
 it('allows custom tenant column name', function () {
     // Create a custom test model with different tenant column
-    $customModel = new class extends Post {
+    $customModel = new class extends Post
+    {
         protected $tenantColumn = 'organization_id';
     };
 
@@ -144,16 +144,16 @@ it('allows custom tenant column name', function () {
 it('handles queries without tenant context gracefully', function () {
     $tenant = Tenant::factory()->create();
     tenant_context()->set($tenant);
-    
+
     // Create a post with tenant context
     Post::create(['title' => 'Test Post', 'content' => 'Test Content']);
-    
+
     // Clear tenant context
     tenant_context()->clear();
-    
+
     // Should return 0 results when no tenant context is set
     expect(Post::count())->toBe(0);
-    
+
     // But should see all posts when using forAllTenants
     expect(Post::forAllTenants()->count())->toBe(1);
 });
