@@ -3,7 +3,7 @@
 use Roberts\LaravelSingledbTenancy\Context\TenantContext;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 
-if (!function_exists('tenant_context')) {
+if (! function_exists('tenant_context')) {
     /**
      * Get the tenant context instance.
      */
@@ -13,7 +13,7 @@ if (!function_exists('tenant_context')) {
     }
 }
 
-if (!function_exists('current_tenant')) {
+if (! function_exists('current_tenant')) {
     /**
      * Get the current tenant.
      */
@@ -23,7 +23,7 @@ if (!function_exists('current_tenant')) {
     }
 }
 
-if (!function_exists('current_tenant_id')) {
+if (! function_exists('current_tenant_id')) {
     /**
      * Get the current tenant ID.
      */
@@ -33,7 +33,7 @@ if (!function_exists('current_tenant_id')) {
     }
 }
 
-if (!function_exists('has_tenant')) {
+if (! function_exists('has_tenant')) {
     /**
      * Check if a tenant is currently set in context.
      */
@@ -43,10 +43,10 @@ if (!function_exists('has_tenant')) {
     }
 }
 
-if (!function_exists('require_tenant')) {
+if (! function_exists('require_tenant')) {
     /**
      * Get the current tenant or throw an exception if none is set.
-     * 
+     *
      * @throws Roberts\LaravelSingledbTenancy\Exceptions\TenantNotResolvedException
      */
     function require_tenant(): Tenant

@@ -1,6 +1,5 @@
 <?php
 
-use Roberts\LaravelSingledbTenancy\Context\TenantContext;
 use Roberts\LaravelSingledbTenancy\Exceptions\TenantNotResolvedException;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 
@@ -40,7 +39,7 @@ describe('TenantContext', function () {
     });
 
     it('throws exception when checking for required tenant but none is set', function () {
-        expect(fn() => $this->context->check())
+        expect(fn () => $this->context->check())
             ->toThrow(TenantNotResolvedException::class, 'No tenant is currently set in context');
     });
 

@@ -15,7 +15,7 @@ describe('Helper Functions', function () {
 
     it('current_tenant returns null when no tenant is set', function () {
         tenant_context()->clear();
-        
+
         expect(current_tenant())->toBeNull();
     });
 
@@ -52,7 +52,7 @@ describe('Helper Functions', function () {
     it('require_tenant throws exception when no tenant is set', function () {
         tenant_context()->clear();
 
-        expect(fn() => require_tenant())
+        expect(fn () => require_tenant())
             ->toThrow(TenantNotResolvedException::class);
     });
 

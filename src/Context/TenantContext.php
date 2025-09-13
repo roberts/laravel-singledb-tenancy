@@ -2,8 +2,8 @@
 
 namespace Roberts\LaravelSingledbTenancy\Context;
 
-use Roberts\LaravelSingledbTenancy\Models\Tenant;
 use Roberts\LaravelSingledbTenancy\Exceptions\TenantNotResolvedException;
+use Roberts\LaravelSingledbTenancy\Models\Tenant;
 
 class TenantContext
 {
@@ -35,12 +35,12 @@ class TenantContext
 
     /**
      * Check if a tenant is currently set and return it.
-     * 
+     *
      * @throws TenantNotResolvedException
      */
     public function check(): Tenant
     {
-        if (!$this->tenant) {
+        if (! $this->tenant) {
             throw new TenantNotResolvedException('No tenant is currently set in context');
         }
 
@@ -69,9 +69,10 @@ class TenantContext
     public function runWith(Tenant $tenant, callable $callback): mixed
     {
         $original = $this->tenant;
-        
+
         try {
             $this->set($tenant);
+
             return $callback();
         } finally {
             if ($original) {
@@ -88,9 +89,10 @@ class TenantContext
     public function runWithout(callable $callback): mixed
     {
         $original = $this->tenant;
-        
+
         try {
             $this->clear();
+
             return $callback();
         } finally {
             if ($original) {
