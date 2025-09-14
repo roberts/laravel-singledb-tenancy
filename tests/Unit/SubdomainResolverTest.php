@@ -7,7 +7,7 @@ use Roberts\LaravelSingledbTenancy\Models\Tenant;
 use Roberts\LaravelSingledbTenancy\Resolvers\SubdomainResolver;
 
 beforeEach(function () {
-    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.com']);
+    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.test']);
 });
 
 it('resolves tenant by subdomain', function () {
@@ -15,7 +15,7 @@ it('resolves tenant by subdomain', function () {
         'slug' => 'acme',
     ]);
 
-    $request = Request::create('https://acme.app.com/dashboard');
+    $request = Request::create('https://acme.app.test/dashboard');
     $resolver = app(SubdomainResolver::class);
 
     $resolved = $resolver->resolve($request);
@@ -25,7 +25,7 @@ it('resolves tenant by subdomain', function () {
 });
 
 it('returns null for base domain without subdomain', function () {
-    $request = Request::create('https://app.com/dashboard');
+    $request = Request::create('https://app.test/dashboard');
     $resolver = app(SubdomainResolver::class);
 
     $resolved = $resolver->resolve($request);
@@ -36,7 +36,7 @@ it('returns null for base domain without subdomain', function () {
 it('returns null for reserved subdomains', function () {
     config(['singledb-tenancy.resolution.subdomain.reserved' => ['api', 'admin']]);
 
-    $request = Request::create('https://api.app.com/v1/users');
+    $request = Request::create('https://api.app.test/v1/users');
     $resolver = app(SubdomainResolver::class);
 
     $resolved = $resolver->resolve($request);
@@ -45,7 +45,7 @@ it('returns null for reserved subdomains', function () {
 });
 
 it('returns null for multi-level subdomains', function () {
-    $request = Request::create('https://api.tenant.app.com/dashboard');
+    $request = Request::create('https://api.tenant.app.test/dashboard');
     $resolver = app(SubdomainResolver::class);
 
     $resolved = $resolver->resolve($request);
@@ -60,7 +60,7 @@ it('returns null when subdomain resolution is disabled', function () {
         'slug' => 'acme',
     ]);
 
-    $request = Request::create('https://acme.app.com/dashboard');
+    $request = Request::create('https://acme.app.test/dashboard');
     $resolver = app(SubdomainResolver::class);
 
     $resolved = $resolver->resolve($request);
@@ -69,7 +69,7 @@ it('returns null when subdomain resolution is disabled', function () {
 });
 
 it('returns null when host does not match base domain', function () {
-    $request = Request::create('https://acme.different.com/dashboard');
+    $request = Request::create('https://acme.different.test/dashboard');
     $resolver = app(SubdomainResolver::class);
 
     $resolved = $resolver->resolve($request);
@@ -78,7 +78,7 @@ it('returns null when host does not match base domain', function () {
 });
 
 it('returns null when no tenant matches subdomain', function () {
-    $request = Request::create('https://nonexistent.app.com/dashboard');
+    $request = Request::create('https://nonexistent.app.test/dashboard');
     $resolver = app(SubdomainResolver::class);
 
     $resolved = $resolver->resolve($request);
@@ -96,18 +96,18 @@ it('handles requests without host gracefully', function () {
 });
 
 it('extracts correct subdomain from various hosts', function () {
-    $tenant = Tenant::factory()->create(['slug' => 'test']);
+    $tenant = Tenant::factory()->create(['slug' => 'subdomain']);
     $resolver = app(SubdomainResolver::class);
 
     // Valid subdomain
-    $request = Request::create('https://test.app.com/dashboard');
+    $request = Request::create('https://subdomain.app.test/dashboard');
     expect($resolver->resolve($request))->not()->toBeNull();
 
     // Invalid - no subdomain
-    $request = Request::create('https://app.com/dashboard');
+    $request = Request::create('https://app.test/dashboard');
     expect($resolver->resolve($request))->toBeNull();
 
     // Invalid - different domain
-    $request = Request::create('https://test.other.com/dashboard');
+    $request = Request::create('https://subdomain.other.test/dashboard');
     expect($resolver->resolve($request))->toBeNull();
 });

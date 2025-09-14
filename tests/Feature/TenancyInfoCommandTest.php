@@ -60,7 +60,7 @@ it('displays current tenant context when set', function () {
     $tenant = Tenant::factory()->create([
         'name' => 'Test Tenant',
         'slug' => 'test-tenant',
-        'domain' => 'test.example.com',
+        'domain' => 'subdomain.example.test',
     ]);
 
     tenant_context()->set($tenant);
@@ -69,7 +69,7 @@ it('displays current tenant context when set', function () {
         ->expectsOutputToContain('Current Tenant Context:')
         ->expectsOutputToContain('Name: Test Tenant')
         ->expectsOutputToContain('Slug: test-tenant')
-        ->expectsOutputToContain('Domain: test.example.com')
+        ->expectsOutputToContain('Domain: subdomain.example.test')
         ->assertExitCode(0);
 });
 

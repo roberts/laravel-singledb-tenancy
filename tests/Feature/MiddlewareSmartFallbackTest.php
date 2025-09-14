@@ -10,7 +10,7 @@ it('skips tenant logic when no tenants exist', function () {
     // Ensure no tenants exist
     expect(Tenant::count())->toBe(0);
 
-    $request = Request::create('http://unknown.example.com');
+    $request = Request::create('http://unknown.example.test');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -27,10 +27,10 @@ it('skips tenant logic when no tenants exist', function () {
 it('runs normal resolution when tenants exist', function () {
     // Create a tenant
     $tenant = Tenant::factory()->create([
-        'domain' => 'test.example.com',
+        'domain' => 'subdomain.example.test',
     ]);
 
-    $request = Request::create('http://test.example.com');
+    $request = Request::create('http://subdomain.example.test');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) use ($tenant) {
@@ -46,10 +46,10 @@ it('runs normal resolution when tenants exist', function () {
 it('falls back to tenant ID 1 when no tenant is resolved', function () {
     // Create primary tenant and another tenant
     $primaryTenant = Tenant::factory()->create(['id' => 1, 'name' => 'Primary']);
-    Tenant::factory()->create(['id' => 2, 'domain' => 'other.example.com']);
+    Tenant::factory()->create(['id' => 2, 'domain' => 'other.example.test']);
 
     // Request to unknown domain
-    $request = Request::create('http://unknown.example.com');
+    $request = Request::create('http://unknown.example.test');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -65,10 +65,10 @@ it('falls back to tenant ID 1 when no tenant is resolved', function () {
 
 it('runs normally when tenants exist but no tenant ID 1 and no resolution', function () {
     // Create tenant with ID 2 (no primary tenant)
-    Tenant::factory()->create(['id' => 2, 'domain' => 'other.example.com']);
+    Tenant::factory()->create(['id' => 2, 'domain' => 'other.example.test']);
 
     // Request to unknown domain
-    $request = Request::create('http://unknown.example.com');
+    $request = Request::create('http://unknown.example.test');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -84,10 +84,10 @@ it('runs normally when tenants exist but no tenant ID 1 and no resolution', func
 it('prioritizes normal resolution over fallback', function () {
     // Create primary tenant and specific domain tenant
     Tenant::factory()->create(['id' => 1, 'name' => 'Primary']);
-    $domainTenant = Tenant::factory()->create(['id' => 2, 'domain' => 'test.example.com']);
+    $domainTenant = Tenant::factory()->create(['id' => 2, 'domain' => 'subdomain.example.test']);
 
     // Request to specific domain should resolve to domain tenant, not fallback
-    $request = Request::create('http://test.example.com');
+    $request = Request::create('http://subdomain.example.test');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) use ($domainTenant) {
@@ -102,7 +102,7 @@ it('prioritizes normal resolution over fallback', function () {
 
 it('does not fallback to suspended primary tenant', function () {
     // Create tenant ID 1 and suspend it
-    $tenant = Tenant::factory()->create(['id' => 1, 'domain' => 'tenant1.example.com']);
+    $tenant = Tenant::factory()->create(['id' => 1, 'domain' => 'tenant1.example.test']);
 
     // Suspend the tenant directly by updating the deleted_at field
     $tenant->deleted_at = now();
@@ -116,7 +116,7 @@ it('does not fallback to suspended primary tenant', function () {
     expect($freshTenant->isActive())->toBeFalse();
 
     // Mock request with unresolved domain
-    $request = Request::create('http://nonexistent.example.com/test');
+    $request = Request::create('http://nonexistent.example.test/test');
 
     $middleware = app(TenantResolutionMiddleware::class);
     $middleware->handle($request, function ($req) {

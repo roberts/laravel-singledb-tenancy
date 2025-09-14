@@ -13,10 +13,10 @@ beforeEach(function () {
 
 it('resolves tenant by domain', function () {
     $tenant = Tenant::factory()->create([
-        'domain' => 'example.com',
+        'domain' => 'example.test',
     ]);
 
-    $request = Request::create('https://example.com/dashboard');
+    $request = Request::create('https://example.test/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -29,13 +29,13 @@ it('resolves tenant by domain', function () {
 });
 
 it('resolves tenant by subdomain', function () {
-    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.com']);
+    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.test']);
 
     $tenant = Tenant::factory()->create([
         'slug' => 'acme',
     ]);
 
-    $request = Request::create('https://acme.app.com/dashboard');
+    $request = Request::create('https://acme.app.test/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -49,11 +49,11 @@ it('resolves tenant by subdomain', function () {
 
 it('ignores reserved subdomains', function () {
     config([
-        'singledb-tenancy.resolution.subdomain.base_domain' => 'app.com',
+        'singledb-tenancy.resolution.subdomain.base_domain' => 'app.test',
         'singledb-tenancy.resolution.subdomain.reserved' => ['api', 'admin'],
     ]);
 
-    $request = Request::create('https://api.app.com/v1/users');
+    $request = Request::create('https://api.app.test/v1/users');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -67,7 +67,7 @@ it('ignores reserved subdomains', function () {
 it('continues without tenant when none resolved and handling is continue', function () {
     config(['singledb-tenancy.failure_handling.unresolved_tenant' => 'continue']);
 
-    $request = Request::create('https://nonexistent.com/dashboard');
+    $request = Request::create('https://nonexistent.test/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -91,7 +91,7 @@ it('throws exception when no tenant resolved and handling is exception', functio
     // Verify no tenants exist
     expect(Tenant::count())->toBe(0);
 
-    $request = Request::create('https://nonexistent.com/dashboard');
+    $request = Request::create('https://nonexistent.test/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
 
     expect(fn () => $middleware->handle($request, function ($req) {
@@ -101,12 +101,12 @@ it('throws exception when no tenant resolved and handling is exception', functio
 
 it('uses specific resolution strategies when provided', function () {
     $tenant = Tenant::factory()->create([
-        'domain' => 'example.com',
+        'domain' => 'example.test',
         'slug' => 'example',
     ]);
 
     // Test domain-only resolution
-    $request = Request::create('https://example.com/dashboard');
+    $request = Request::create('https://example.test/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -121,7 +121,7 @@ it('uses forced tenant in development', function () {
     $tenant = Tenant::factory()->create(['slug' => 'test-tenant']);
     config(['singledb-tenancy.development.force_tenant' => 'test-tenant']);
 
-    $request = Request::create('https://any-domain.com/dashboard');
+    $request = Request::create('https://any-domain.test/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -135,13 +135,13 @@ it('uses forced tenant in development', function () {
 it('does not resolve suspended tenants', function () {
     $tenant = Tenant::factory()->create([
         'id' => 2, // Use ID 2 to avoid deletion protection
-        'domain' => 'example.com',
+        'domain' => 'example.test',
     ]);
 
     // Suspend the tenant (soft delete)
     $tenant->suspend();
 
-    $request = Request::create('https://example.com/dashboard');
+    $request = Request::create('https://example.test/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -155,10 +155,10 @@ it('does not resolve suspended tenants', function () {
 });
 
 it('prioritizes domain over subdomain resolution', function () {
-    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.com']);
+    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.test']);
 
     $domainTenant = Tenant::factory()->create([
-        'domain' => 'acme.app.com',
+        'domain' => 'acme.app.test',
         'slug' => 'domain-tenant',
     ]);
 
@@ -166,7 +166,7 @@ it('prioritizes domain over subdomain resolution', function () {
         'slug' => 'acme',
     ]);
 
-    $request = Request::create('https://acme.app.com/dashboard');
+    $request = Request::create('https://acme.app.test/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
@@ -178,14 +178,14 @@ it('prioritizes domain over subdomain resolution', function () {
 });
 
 it('falls back to subdomain when domain resolution fails', function () {
-    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.com']);
+    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.test']);
 
     $tenant = Tenant::factory()->create([
         'slug' => 'acme',
     ]);
 
     // No domain match, should fall back to subdomain
-    $request = Request::create('https://acme.app.com/dashboard');
+    $request = Request::create('https://acme.app.test/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {

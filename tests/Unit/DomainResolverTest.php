@@ -8,10 +8,10 @@ use Roberts\LaravelSingledbTenancy\Resolvers\DomainResolver;
 
 it('resolves tenant by exact domain match', function () {
     $tenant = Tenant::factory()->create([
-        'domain' => 'example.com',
+        'domain' => 'example.test',
     ]);
 
-    $request = Request::create('https://example.com/dashboard');
+    $request = Request::create('https://example.test/dashboard');
     $resolver = app(DomainResolver::class);
 
     $resolved = $resolver->resolve($request);
@@ -21,7 +21,7 @@ it('resolves tenant by exact domain match', function () {
 });
 
 it('returns null when no domain matches', function () {
-    $request = Request::create('https://nonexistent.com/dashboard');
+    $request = Request::create('https://nonexistent.test/dashboard');
     $resolver = app(DomainResolver::class);
 
     $resolved = $resolver->resolve($request);
@@ -33,10 +33,10 @@ it('returns null when domain resolution is disabled', function () {
     config(['singledb-tenancy.resolution.domain.enabled' => false]);
 
     $tenant = Tenant::factory()->create([
-        'domain' => 'example.com',
+        'domain' => 'example.test',
     ]);
 
-    $request = Request::create('https://example.com/dashboard');
+    $request = Request::create('https://example.test/dashboard');
     $resolver = app(DomainResolver::class);
 
     $resolved = $resolver->resolve($request);
