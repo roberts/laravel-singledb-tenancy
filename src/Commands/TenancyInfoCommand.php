@@ -29,20 +29,6 @@ class TenancyInfoCommand extends Command
         $this->line("  Tenant Column: {$tenantColumnStr}");
         $this->newLine();
 
-        // Resolution strategies
-        $strategies = config('singledb-tenancy.resolution.strategies', []);
-        $this->info('Resolution Strategies:');
-        if (is_array($strategies)) {
-            foreach ($strategies as $strategy) {
-                if (is_string($strategy)) {
-                    $enabled = config("singledb-tenancy.resolution.{$strategy}.enabled", false);
-                    $status = $enabled ? '✓' : '✗';
-                    $this->line("  {$status} {$strategy}");
-                }
-            }
-        }
-        $this->newLine();
-
         // Caching
         $cacheEnabled = config('singledb-tenancy.caching.enabled', false);
         $cacheStore = config('singledb-tenancy.caching.store', 'default');

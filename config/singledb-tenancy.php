@@ -53,42 +53,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Tenant Resolution
-    |--------------------------------------------------------------------------
-    |
-    | Configuration for how tenants are resolved from HTTP requests.
-    |
-    */
-    'resolution' => [
-        /*
-        | Resolution strategies to attempt in order.
-        | Available: 'domain', 'subdomain'
-        */
-        'strategies' => ['domain', 'subdomain'],
-
-        /*
-        | Domain-based resolution matches the full request domain
-        | against the tenant's domain column.
-        */
-        'domain' => [
-            'enabled' => true,
-            'column' => 'domain',
-        ],
-
-        /*
-        | Subdomain-based resolution extracts the subdomain and matches
-        | it against the tenant's slug column.
-        */
-        'subdomain' => [
-            'enabled' => true,
-            'column' => 'slug',
-            'base_domain' => env('TENANT_BASE_DOMAIN', 'localhost'), // @phpstan-ignore larastan.noEnvCallsOutsideOfConfig
-            'reserved' => ['api', 'admin', 'mail', 'www'],
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Routing
     |--------------------------------------------------------------------------
     |
@@ -98,7 +62,7 @@ return [
     'routing' => [
         /*
         | Path where tenant-specific route files are stored.
-        | Files should be named using the tenant's slug (e.g., 'acme.php').
+        | Files should be named using the tenant's domain (e.g., 'drewroberts.com.php' & 'subdomain.drewroberts.com.php').
         */
         'custom_routes_path' => base_path('routes/tenants'),
 
@@ -107,12 +71,6 @@ return [
         | has custom route files.
         */
         'include_default_routes' => true,
-
-        /*
-        | The tenant attribute to use for route file naming.
-        | Options: 'slug', 'id', 'domain'
-        */
-        'route_file_naming' => 'slug',
     ],
 
     /*
@@ -186,8 +144,8 @@ return [
         'local_domains' => ['.test', '.local', '.localhost'],
 
         /*
-        | Force a specific tenant slug for development/testing.
+        | Force a specific tenant domain for development/testing.
         */
-        'force_tenant' => env('FORCE_TENANT_SLUG'), // @phpstan-ignore larastan.noEnvCallsOutsideOfConfig
+        'force_tenant' => env('FORCE_TENANT_DOMAIN'), // @phpstan-ignore larastan.noEnvCallsOutsideOfConfig
     ],
 ];

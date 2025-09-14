@@ -28,11 +28,9 @@ it('resolves tenant by domain', function () {
     expect(current_tenant()->id)->toBe($tenant->id);
 });
 
-it('resolves tenant by subdomain', function () {
-    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.test']);
-
+it('resolves tenant by subdomain using domain field', function () {
     $tenant = Tenant::factory()->create([
-        'slug' => 'acme',
+        'domain' => 'acme.app.test',
     ]);
 
     $request = Request::create('https://acme.app.test/dashboard');
@@ -45,23 +43,6 @@ it('resolves tenant by subdomain', function () {
     expect($response->getStatusCode())->toBe(200);
     expect(current_tenant())->not()->toBeNull();
     expect(current_tenant()->id)->toBe($tenant->id);
-});
-
-it('ignores reserved subdomains', function () {
-    config([
-        'singledb-tenancy.resolution.subdomain.base_domain' => 'app.test',
-        'singledb-tenancy.resolution.subdomain.reserved' => ['api', 'admin'],
-    ]);
-
-    $request = Request::create('https://api.app.test/v1/users');
-    $middleware = app(TenantResolutionMiddleware::class);
-
-    $response = $middleware->handle($request, function ($req) {
-        return response('OK');
-    });
-
-    expect($response->getStatusCode())->toBe(200);
-    expect(current_tenant())->toBeNull();
 });
 
 it('continues without tenant when none resolved and handling is continue', function () {
@@ -99,27 +80,9 @@ it('throws exception when no tenant resolved and handling is exception', functio
     }))->toThrow(RuntimeException::class, 'Could not resolve tenant from request');
 });
 
-it('uses specific resolution strategies when provided', function () {
-    $tenant = Tenant::factory()->create([
-        'domain' => 'example.test',
-        'slug' => 'example',
-    ]);
-
-    // Test domain-only resolution
-    $request = Request::create('https://example.test/dashboard');
-    $middleware = app(TenantResolutionMiddleware::class);
-
-    $response = $middleware->handle($request, function ($req) {
-        return response('OK');
-    }, 'domain');
-
-    expect(current_tenant())->not()->toBeNull();
-    expect(current_tenant()->id)->toBe($tenant->id);
-});
-
 it('uses forced tenant in development', function () {
-    $tenant = Tenant::factory()->create(['slug' => 'test-tenant']);
-    config(['singledb-tenancy.development.force_tenant' => 'test-tenant']);
+    $tenant = Tenant::factory()->create(['domain' => 'test-tenant.example.com']);
+    config(['singledb-tenancy.development.force_tenant' => 'test-tenant.example.com']);
 
     $request = Request::create('https://any-domain.test/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
@@ -152,46 +115,4 @@ it('does not resolve suspended tenants', function () {
     // So this should continue without tenant (or handle according to unresolved_tenant config)
     expect($response->getStatusCode())->toBe(200);
     expect(current_tenant())->toBeNull();
-});
-
-it('prioritizes domain over subdomain resolution', function () {
-    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.test']);
-
-    $domainTenant = Tenant::factory()->create([
-        'domain' => 'acme.app.test',
-        'slug' => 'domain-tenant',
-    ]);
-
-    $subdomainTenant = Tenant::factory()->create([
-        'slug' => 'acme',
-    ]);
-
-    $request = Request::create('https://acme.app.test/dashboard');
-    $middleware = app(TenantResolutionMiddleware::class);
-
-    $response = $middleware->handle($request, function ($req) {
-        return response('OK');
-    });
-
-    expect(current_tenant())->not()->toBeNull();
-    expect(current_tenant()->id)->toBe($domainTenant->id); // Domain should win
-});
-
-it('falls back to subdomain when domain resolution fails', function () {
-    config(['singledb-tenancy.resolution.subdomain.base_domain' => 'app.test']);
-
-    $tenant = Tenant::factory()->create([
-        'slug' => 'acme',
-    ]);
-
-    // No domain match, should fall back to subdomain
-    $request = Request::create('https://acme.app.test/dashboard');
-    $middleware = app(TenantResolutionMiddleware::class);
-
-    $response = $middleware->handle($request, function ($req) {
-        return response('OK');
-    });
-
-    expect(current_tenant())->not()->toBeNull();
-    expect(current_tenant()->id)->toBe($tenant->id);
 });

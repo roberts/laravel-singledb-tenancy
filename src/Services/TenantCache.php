@@ -30,22 +30,6 @@ class TenantCache
     }
 
     /**
-     * Get tenant by slug from cache or database.
-     */
-    public function getTenantBySlug(string $slug): ?Tenant
-    {
-        if (! $this->isCacheEnabled()) {
-            return $this->resolveTenantBySlug($slug);
-        }
-
-        $key = $this->getSlugCacheKey($slug);
-
-        return $this->getCache()->remember($key, $this->getCacheTtl(), function () use ($slug) {
-            return $this->resolveTenantBySlug($slug);
-        });
-    }
-
-    /**
      * Check if tenant has custom route file.
      */
     public function tenantHasCustomRoutes(string $identifier): bool
@@ -91,10 +75,9 @@ class TenantCache
             $cache->forget($this->getDomainCacheKey($tenant->domain));
         }
 
-        // Clear slug cache
-        if ($tenant->slug) {
-            $cache->forget($this->getSlugCacheKey($tenant->slug));
-            $cache->forget($this->getCustomRoutesCacheKey($tenant->slug));
+        // Clear custom routes cache (using tenant domain)
+        if ($tenant->domain) {
+            $cache->forget($this->getCustomRoutesCacheKey($tenant->domain));
         }
     }
 
@@ -105,23 +88,8 @@ class TenantCache
     {
         /** @var class-string<Tenant> $tenantModel */
         $tenantModel = config('singledb-tenancy.tenant_model');
-        $column = config('singledb-tenancy.resolution.domain.column', 'domain');
-        $columnStr = is_string($column) ? $column : 'domain';
 
-        return $tenantModel::where($columnStr, $domain)->first();
-    }
-
-    /**
-     * Resolve tenant by slug from database.
-     */
-    protected function resolveTenantBySlug(string $slug): ?Tenant
-    {
-        /** @var class-string<Tenant> $tenantModel */
-        $tenantModel = config('singledb-tenancy.tenant_model');
-        $column = config('singledb-tenancy.resolution.subdomain.column', 'slug');
-        $columnStr = is_string($column) ? $column : 'slug';
-
-        return $tenantModel::where($columnStr, $slug)->first();
+        return $tenantModel::where('domain', $domain)->first();
     }
 
     /**
@@ -292,16 +260,6 @@ class TenantCache
         $this->getCache()->forget($this->getTenantExistenceKey());
 
         // Note: We don't invalidate primary tenant cache since it can't be deleted
-    }
-
-    /**
-     * Get cache key for slug resolution.
-     */
-    protected function getSlugCacheKey(string $slug): string
-    {
-        $prefix = $this->getConfigString('singledb-tenancy.caching.key_prefix', 'tenant_resolution:');
-
-        return "{$prefix}slug:{$slug}";
     }
 
     /**

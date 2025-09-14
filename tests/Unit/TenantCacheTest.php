@@ -28,32 +28,10 @@ it('caches tenant resolution by domain', function () {
     expect($resolved2->id)->toBe($tenant->id);
 });
 
-it('caches tenant resolution by slug', function () {
-    $tenant = Tenant::factory()->create([
-        'slug' => 'acme',
-    ]);
-
-    $cache = app(TenantCache::class);
-
-    $resolved1 = $cache->getTenantBySlug('acme');
-    expect($resolved1)->not()->toBeNull();
-    expect($resolved1->id)->toBe($tenant->id);
-
-    $resolved2 = $cache->getTenantBySlug('acme');
-    expect($resolved2->id)->toBe($tenant->id);
-});
-
 it('returns null when tenant not found by domain', function () {
     $cache = app(TenantCache::class);
 
     $resolved = $cache->getTenantByDomain('nonexistent.test');
-    expect($resolved)->toBeNull();
-});
-
-it('returns null when tenant not found by slug', function () {
-    $cache = app(TenantCache::class);
-
-    $resolved = $cache->getTenantBySlug('nonexistent');
     expect($resolved)->toBeNull();
 });
 
@@ -74,14 +52,12 @@ it('works when caching is disabled', function () {
 it('forgets specific tenant cache', function () {
     $tenant = Tenant::factory()->create([
         'domain' => 'example.test',
-        'slug' => 'example',
     ]);
 
     $cache = app(TenantCache::class);
 
     // Cache the tenant
     $cache->getTenantByDomain('example.test');
-    $cache->getTenantBySlug('example');
 
     // Forget the tenant
     $cache->forgetTenant($tenant);
@@ -92,26 +68,44 @@ it('forgets specific tenant cache', function () {
 });
 
 it('checks custom route file existence', function () {
+    // Disable caching for this test to avoid cache pollution
+    config(['singledb-tenancy.caching.enabled' => false]);
+
     // Create a temporary test routes directory
     $routesPath = storage_path('framework/testing/tenant-routes');
     if (! is_dir($routesPath)) {
         mkdir($routesPath, 0755, true);
     }
 
+    // Clean up any existing files first
+    $filePath = "{$routesPath}/example.com.php";
+    if (file_exists($filePath)) {
+        unlink($filePath);
+    }
+
     config(['singledb-tenancy.routing.custom_routes_path' => $routesPath]);
 
     $cache = app(TenantCache::class);
 
-    // Should return false when file doesn't exist
-    expect($cache->tenantHasCustomRoutes('nonexistent'))->toBeFalse();
+    // Verify file doesn't exist
+    expect(file_exists($filePath))->toBeFalse();
 
-    // Create a test route file
-    file_put_contents("{$routesPath}/testslug.php", "<?php\n// Test route file\n");
+    // Should return false when file doesn't exist
+    expect($cache->tenantHasCustomRoutes('example.com'))->toBeFalse();
+
+    // Create a test route file using tenant domain
+    file_put_contents($filePath, "<?php\n// Test route file\n");
+
+    // Debug: verify file was created
+    expect(file_exists($filePath))->toBeTrue();
+    expect(config('singledb-tenancy.routing.custom_routes_path'))->toBe($routesPath);
 
     // Should return true when file exists
-    expect($cache->tenantHasCustomRoutes('testslug'))->toBeTrue();
+    expect($cache->tenantHasCustomRoutes('example.com'))->toBeTrue();
 
     // Clean up
-    unlink("{$routesPath}/testslug.php");
-    rmdir($routesPath);
+    unlink($filePath);
+    if (is_dir($routesPath)) {
+        rmdir($routesPath);
+    }
 });

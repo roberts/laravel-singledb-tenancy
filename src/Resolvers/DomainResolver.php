@@ -19,7 +19,8 @@ class DomainResolver
      */
     public function resolve(Request $request): ?Tenant
     {
-        if (! $this->isEnabled()) {
+        // Check if domain resolution is enabled
+        if (! config('singledb-tenancy.resolution.domain.enabled', true)) {
             return null;
         }
 
@@ -30,13 +31,5 @@ class DomainResolver
         }
 
         return $this->cache->getTenantByDomain($domain);
-    }
-
-    /**
-     * Check if domain resolution is enabled.
-     */
-    protected function isEnabled(): bool
-    {
-        return (bool) config('singledb-tenancy.resolution.domain.enabled', true);
     }
 }

@@ -50,24 +50,6 @@ php artisan vendor:publish --tag="laravel-singledb-tenancy-config"
 
 The package provides extensive configuration options in `config/singledb-tenancy.php`:
 
-### Tenant Resolution Strategies
-
-```php
-'resolution' => [
-    'strategies' => ['domain', 'subdomain'],
-    'domain' => [
-        'enabled' => true,
-        'column' => 'domain',
-    ],
-    'subdomain' => [
-        'enabled' => true,
-        'column' => 'slug',
-        'base_domain' => env('TENANT_BASE_DOMAIN', 'localhost'),
-        'reserved' => ['api', 'admin', 'mail', 'www'],
-    ],
-],
-```
-
 ### Caching Configuration
 
 ```php
@@ -93,17 +75,25 @@ The package provides extensive configuration options in `config/singledb-tenancy
 ```php
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 
-// Create a tenant with domain
+// Create a tenant with a root domain
 $tenant = Tenant::create([
     'name' => 'Acme Corporation',
     'domain' => 'acme.com',
     'slug' => 'acme', // Auto-generated if not provided
 ]);
 
-// Create a tenant for subdomain
+// Create a tenant with a subdomain
 $tenant = Tenant::create([
     'name' => 'Beta Company',
-    'slug' => 'beta', // Will be accessible at beta.yourapp.com
+    'domain' => 'beta.acme.com', // Full subdomain in domain field
+    'slug' => 'beta',
+]);
+
+// Create another tenant with a different subdomain
+$tenant = Tenant::create([
+    'name' => 'Enterprise Division',
+    'domain' => 'enterprise.acme.com', // Each subdomain gets its own entry
+    'slug' => 'enterprise',
 ]);
 ```
 
@@ -129,7 +119,7 @@ This automatically applies tenant scoping to queries, sets tenant_id on creation
 Apply the tenant resolution middleware to your routes:
 
 ```php
-// All resolution strategies
+// Domain resolution for all routes
 Route::middleware(['web', 'tenant'])->group(function () {
     Route::get('/dashboard', DashboardController::class);
 });
@@ -137,11 +127,6 @@ Route::middleware(['web', 'tenant'])->group(function () {
 // Domain resolution only
 Route::middleware(['web', 'tenant:domain'])->group(function () {
     Route::get('/custom', CustomController::class);
-});
-
-// Subdomain resolution only
-Route::middleware(['web', 'tenant:subdomain'])->group(function () {
-    Route::get('/app/{page}', AppController::class);
 });
 ```
 
@@ -219,18 +204,8 @@ Support tenant-specific route files in `routes/tenants/`:
 routes/
 ├── web.php              # Default routes for all tenants
 └── tenants/
-    ├── acme.php         # Routes for 'acme' tenant
-    └── enterprise.php   # Routes for 'enterprise' tenant
-```
-
-Configure custom routing:
-
-```php
-'routing' => [
-    'custom_routes_path' => base_path('routes/tenants'),
-    'include_default_routes' => true,
-    'route_file_naming' => 'slug', // slug|id|domain
-],
+    ├── acme.com.php         # Routes for 'acme.com' tenant domain
+    └── sub.acme.com.php   # Routes for 'sub.acme.com' tenant domain
 ```
 
 ### Development and Testing
@@ -239,7 +214,7 @@ Force a specific tenant during development:
 
 ```bash
 # .env
-FORCE_TENANT_SLUG=dev-tenant
+FORCE_TENANT_DOMAIN=dev.yourapp.com
 ```
 
 Disable tenant resolution for tests that need to see all data:
@@ -252,34 +227,40 @@ tenant_context()->runWithout(function () {
 
 ## Tenant Resolution
 
-### Domain-Based Resolution
+The package uses **domain-based resolution** to match the full request domain against the `domain` column in your tenants table. This works for both root domains and subdomains.
 
-Matches the full request domain against the `domain` column:
-
-```php
-// example.com → Tenant with domain 'example.com'
-// custom-domain.co.uk → Tenant with domain 'custom-domain.co.uk'
-```
-
-### Subdomain-Based Resolution
-
-Extracts subdomain and matches against the `slug` column:
+### How It Works
 
 ```php
-// acme.yourapp.com → Tenant with slug 'acme'
-// beta.yourapp.com → Tenant with slug 'beta'
+// Root domain resolution
+// Request: https://acme.com/dashboard
+// Matches: Tenant with domain = 'acme.com'
 
-// Reserved subdomains are ignored:
-// api.yourapp.com → No tenant resolution
-// www.yourapp.com → No tenant resolution
+// Subdomain resolution  
+// Request: https://beta.acme.com/dashboard
+// Matches: Tenant with domain = 'beta.acme.com'
+
+// Deep subdomain resolution
+// Request: https://api.beta.acme.com/dashboard  
+// Matches: Tenant with domain = 'api.beta.acme.com'
+
+// Custom domain resolution
+// Request: https://customdomain.co.uk/dashboard
+// Matches: Tenant with domain = 'customdomain.co.uk'
 ```
 
-### Resolution Priority
+### Database Structure
 
-When multiple strategies are enabled, resolution follows this order:
+Your tenants table should contain complete domain entries:
 
-1. **Domain resolution** - Exact domain match
-2. **Subdomain resolution** - Subdomain extraction and slug match
+```php
+// Example tenant records:
+['id' => 1, 'name' => 'Main Site', 'domain' => 'acme.com', 'slug' => 'main']
+['id' => 2, 'name' => 'Beta Site', 'domain' => 'beta.acme.com', 'slug' => 'beta'] 
+['id' => 3, 'name' => 'API Site', 'domain' => 'api.acme.com', 'slug' => 'api']
+['id' => 4, 'name' => 'Enterprise', 'domain' => 'enterprise.acme.com', 'slug' => 'enterprise']
+['id' => 5, 'name' => 'Custom Domain', 'domain' => 'anotherdomain.com', 'slug' => 'another']
+```
 
 If no tenant is resolved, the Smart Fallback Logic can automatically fallback to a designated primary tenant.
 
@@ -460,23 +441,6 @@ return [
     // Tenant model configuration
     'tenant_model' => \Roberts\LaravelSingledbTenancy\Models\Tenant::class,
     
-    // Resolution strategies
-    'resolution' => [
-        'strategies' => ['domain', 'subdomain'],
-        
-        'domain' => [
-            'enabled' => true,
-            'column' => 'domain',
-        ],
-        
-        'subdomain' => [
-            'enabled' => true,
-            'column' => 'slug',
-            'base_domain' => env('TENANT_BASE_DOMAIN', 'localhost'),
-            'reserved' => ['api', 'admin', 'mail', 'www'],
-        ],
-    ],
-    
     // Caching configuration
     'caching' => [
         'enabled' => env('TENANT_CACHE_ENABLED', true),
@@ -484,23 +448,22 @@ return [
         'ttl' => env('TENANT_CACHE_TTL', 3600),
     ],
     
-    // Middleware behavior
-    'middleware' => [
-        'enabled' => true,
-        'force_tenant_slug' => env('FORCE_TENANT_SLUG'),
-    ],
-    
     // Custom routing
     'routing' => [
         'custom_routes_path' => base_path('routes/tenants'),
         'include_default_routes' => true,
-        'route_file_naming' => 'slug', // slug|id|domain
     ],
     
     // Error handling
     'failure_handling' => [
         'unresolved_tenant' => 'fallback', // fallback|continue|exception|redirect
         'redirect_route' => 'tenant.select',
+    ],
+    
+    // Development
+    'development' => [
+        'local_domains' => ['.test', '.local', '.localhost'],
+        'force_tenant' => env('FORCE_TENANT_DOMAIN'),
     ],
 ];
 ```
@@ -513,11 +476,8 @@ TENANT_CACHE_ENABLED=true
 TENANT_CACHE_STORE=redis
 TENANT_CACHE_TTL=3600
 
-# Subdomain configuration
-TENANT_BASE_DOMAIN=yourapp.com
-
 # Development
-FORCE_TENANT_SLUG=dev-tenant
+FORCE_TENANT_DOMAIN=dev.yourapp.com
 ```
 
 ## Migration

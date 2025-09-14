@@ -9,30 +9,22 @@ use Illuminate\Http\Request;
 use Roberts\LaravelSingledbTenancy\Context\TenantContext;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 use Roberts\LaravelSingledbTenancy\Resolvers\DomainResolver;
-use Roberts\LaravelSingledbTenancy\Resolvers\SubdomainResolver;
 use Roberts\LaravelSingledbTenancy\Services\TenantCache;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 
 class TenantResolutionMiddleware
 {
-    /**
-     * @var array<string, class-string>
-     */
-    protected array $resolvers = [
-        'domain' => DomainResolver::class,
-        'subdomain' => SubdomainResolver::class,
-    ];
-
     public function __construct(
         private TenantContext $tenantContext,
-        private TenantCache $tenantCache
+        private TenantCache $tenantCache,
+        private DomainResolver $domainResolver
     ) {}
 
     /**
      * Handle an incoming request.
      */
-    public function handle(Request $request, Closure $next, string ...$strategies): Response
+    public function handle(Request $request, Closure $next): Response
     {
         // Check for forced tenant in development
         if ($forcedTenant = $this->getForcedTenant()) {
@@ -54,24 +46,17 @@ class TenantResolutionMiddleware
             return $next($request);
         }
 
-        // Determine which strategies to use
-        $strategiesToUse = empty($strategies)
-            ? $this->getDefaultStrategies()
-            : $strategies;
+        // Try domain resolution
+        $tenant = $this->domainResolver->resolve($request);
 
-        // Try each resolution strategy in order
-        foreach ($strategiesToUse as $strategy) {
-            $tenant = $this->resolveWithStrategy($strategy, $request);
-
-            if ($tenant) {
-                if ($this->isTenantSuspended($tenant)) {
-                    abort(403, 'Tenant is suspended');
-                }
-
-                $this->tenantContext->set($tenant);
-
-                return $next($request);
+        if ($tenant) {
+            if ($this->isTenantSuspended($tenant)) {
+                abort(403, 'Tenant is suspended');
             }
+
+            $this->tenantContext->set($tenant);
+
+            return $next($request);
         }
 
         // No tenant resolved, try fallback to tenant ID 1
@@ -90,52 +75,20 @@ class TenantResolutionMiddleware
     }
 
     /**
-     * Resolve tenant using specific strategy.
-     */
-    protected function resolveWithStrategy(string $strategy, Request $request): ?Tenant
-    {
-        if (! isset($this->resolvers[$strategy])) {
-            return null;
-        }
-
-        $resolverClass = $this->resolvers[$strategy];
-        $resolver = app($resolverClass);
-
-        return $resolver->resolve($request);
-    }
-
-    /**
-     * Get default resolution strategies from config.
-     *
-     * @return array<string>
-     */
-    protected function getDefaultStrategies(): array
-    {
-        $strategies = config('singledb-tenancy.resolution.strategies', ['domain', 'subdomain']);
-
-        if (! is_array($strategies)) {
-            return ['domain', 'subdomain'];
-        }
-
-        /** @var array<string> */
-        return array_filter($strategies, 'is_string');
-    }
-
-    /**
      * Get forced tenant for development/testing.
      */
     protected function getForcedTenant(): ?Tenant
     {
-        $forcedSlug = config('singledb-tenancy.development.force_tenant');
+        $forcedDomain = config('singledb-tenancy.development.force_tenant');
 
-        if (! $forcedSlug) {
+        if (! $forcedDomain) {
             return null;
         }
 
         /** @var class-string<Tenant> $tenantModel */
         $tenantModel = config('singledb-tenancy.tenant_model');
 
-        return $tenantModel::where('slug', $forcedSlug)->first();
+        return $tenantModel::where('domain', $forcedDomain)->first();
     }
 
     /**

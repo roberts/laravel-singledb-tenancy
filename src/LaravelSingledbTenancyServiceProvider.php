@@ -7,8 +7,9 @@ use Roberts\LaravelSingledbTenancy\Commands\AddTenantColumnCommand;
 use Roberts\LaravelSingledbTenancy\Commands\TenancyInfoCommand;
 use Roberts\LaravelSingledbTenancy\Context\TenantContext;
 use Roberts\LaravelSingledbTenancy\Middleware\TenantResolutionMiddleware;
+use Roberts\LaravelSingledbTenancy\Models\Tenant;
+use Roberts\LaravelSingledbTenancy\Observers\TenantObserver;
 use Roberts\LaravelSingledbTenancy\Resolvers\DomainResolver;
-use Roberts\LaravelSingledbTenancy\Resolvers\SubdomainResolver;
 use Roberts\LaravelSingledbTenancy\Services\TenantCache;
 use Roberts\LaravelSingledbTenancy\Services\TenantRouteManager;
 use Spatie\LaravelPackageTools\Package;
@@ -42,7 +43,6 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
         // Register tenant resolution services
         $this->app->singleton(TenantCache::class);
         $this->app->singleton(DomainResolver::class);
-        $this->app->singleton(SubdomainResolver::class);
         $this->app->singleton(TenantRouteManager::class);
     }
 
@@ -75,10 +75,10 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
      */
     protected function registerObservers(): void
     {
-        $tenantModel = config('singledb-tenancy.tenant_model', \Roberts\LaravelSingledbTenancy\Models\Tenant::class);
+        $tenantModel = config('singledb-tenancy.tenant_model', Tenant::class);
 
         if (is_string($tenantModel) && class_exists($tenantModel)) {
-            $tenantModel::observe(\Roberts\LaravelSingledbTenancy\Observers\TenantObserver::class);
+            $tenantModel::observe(TenantObserver::class);
         }
     }
 }

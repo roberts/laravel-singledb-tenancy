@@ -70,16 +70,11 @@ class TenantRouteManager
 
     /**
      * Get the tenant identifier for route file naming.
+     * Uses the tenant's domain for route file names.
      */
     protected function getTenantRouteIdentifier(Tenant $tenant): string
     {
-        $naming = config('singledb-tenancy.routing.route_file_naming', 'slug');
-
-        return match ($naming) {
-            'id' => (string) $tenant->id,
-            'domain' => $tenant->domain ?? $tenant->slug,
-            default => $tenant->slug,
-        };
+        return $tenant->domain;
     }
 
     /**

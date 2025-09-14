@@ -13,14 +13,6 @@ it('displays configuration information', function () {
         ->assertExitCode(0);
 });
 
-it('displays resolution strategies', function () {
-    $this->artisan('tenancy:info')
-        ->expectsOutputToContain('Resolution Strategies:')
-        ->expectsOutputToContain('✓ domain')
-        ->expectsOutputToContain('✓ subdomain')
-        ->assertExitCode(0);
-});
-
 it('displays caching configuration', function () {
     $this->artisan('tenancy:info')
         ->expectsOutputToContain('Caching:')
@@ -78,15 +70,5 @@ it('shows no context message when no tenant is set', function () {
 
     $this->artisan('tenancy:info')
         ->expectsOutputToContain('No tenant context currently set')
-        ->assertExitCode(0);
-});
-
-it('shows correct strategy status based on configuration', function () {
-    config(['singledb-tenancy.resolution.domain.enabled' => false]);
-    config(['singledb-tenancy.resolution.subdomain.enabled' => true]);
-
-    $this->artisan('tenancy:info')
-        ->expectsOutputToContain('✗ domain')
-        ->expectsOutputToContain('✓ subdomain')
         ->assertExitCode(0);
 });
