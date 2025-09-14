@@ -13,7 +13,7 @@ class SetTenantContext
         private ?int $tenantId
     ) {}
 
-    public function handle($job, $next)
+    public function handle(object $job, callable $next): mixed
     {
         if (! $this->tenantId) {
             return $next($job);
@@ -25,6 +25,6 @@ class SetTenantContext
             return $next($job);
         }
 
-        app(TenantContext::class)->runWith($tenant, fn () => $next($job));
+        return app(TenantContext::class)->runWith($tenant, fn () => $next($job));
     }
 }

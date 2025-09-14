@@ -36,12 +36,6 @@ class AddTenantColumnCommand extends Command
             return self::FAILURE;
         }
 
-        if (! is_string($tenantColumn)) {
-            $this->error('Tenant column name must be a string.');
-
-            return self::FAILURE;
-        }
-
         // Validate table name
         if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $table)) {
             $this->error('Invalid table name. Table names must contain only letters, numbers, and underscores.');

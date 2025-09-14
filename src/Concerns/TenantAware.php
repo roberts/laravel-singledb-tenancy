@@ -10,6 +10,9 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Roberts\LaravelSingledbTenancy\Jobs\Middleware\SetTenantContext;
 
+/**
+ * @phpstan-ignore-next-line
+ */
 trait TenantAware
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;

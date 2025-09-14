@@ -18,7 +18,7 @@ abstract class TenantAwareCommand extends Command
         $this->addOption('all-tenants', null, \Symfony\Component\Console\Input\InputOption::VALUE_NONE, 'Run the command for all tenants.');
     }
 
-    public function handle()
+    public function handle(): int
     {
         if ($this->option('all-tenants')) {
             Tenant::query()->cursor()->each(
@@ -29,6 +29,12 @@ abstract class TenantAwareCommand extends Command
         }
 
         if ($tenantId = $this->option('tenant')) {
+            if (! is_scalar($tenantId)) {
+                $this->error('Invalid tenant ID provided.');
+
+                return 1;
+            }
+
             if (! $tenant = Tenant::find($tenantId)) {
                 $this->error("Tenant with ID {$tenantId} not found.");
 
