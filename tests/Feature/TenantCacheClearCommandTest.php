@@ -13,7 +13,7 @@ describe('TenantCacheClearCommand', function () {
     describe('Cache Operations', function () {
         it('clears tenant cache using tags', function () {
             $tenant = Tenant::factory()->create(['domain' => 'example.test']);
-            
+
             $resolved = $this->cache->getTenantByDomain('example.test');
             expect($resolved)->not()->toBeNull()->and($resolved->id)->toBe($tenant->id);
 

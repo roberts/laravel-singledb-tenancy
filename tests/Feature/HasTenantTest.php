@@ -9,7 +9,7 @@ use Roberts\LaravelSingledbTenancy\Tests\Models\Post;
 
 beforeEach(function () {
     // Create the posts table for our test model if it doesn't exist
-    if (!Schema::hasTable('posts')) {
+    if (! Schema::hasTable('posts')) {
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained('tenants');

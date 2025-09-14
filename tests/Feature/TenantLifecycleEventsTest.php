@@ -33,11 +33,11 @@ describe('Tenant Lifecycle Events', function () {
 
             // Clear any existing tenant context
             tenant_context()->clear();
-            
+
             // Manually set up middleware and simulate the request through it
             $middleware = app(\Roberts\LaravelSingledbTenancy\Middleware\TenantResolutionMiddleware::class);
             $request = \Illuminate\Http\Request::create('http://test.com');
-            
+
             $middleware->handle($request, function () {
                 return response('OK');
             });

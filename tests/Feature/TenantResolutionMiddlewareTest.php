@@ -64,7 +64,7 @@ describe('TenantResolutionMiddleware', function () {
             // Create tenant to disable smart fallback but avoid ID 1
             Tenant::factory()->create(['id' => 2, 'domain' => 'some-other-domain.com']);
             app(SmartFallback::class)->permanentlyCacheTenantsExist();
-            
+
             config(['singledb-tenancy.failure_handling.unresolved_tenant' => 'exception']);
             $request = Request::create('http://non-existent.example.com');
 

@@ -8,9 +8,7 @@ use Roberts\LaravelSingledbTenancy\Services\SmartFallback;
 
 class CacheTenantsExist
 {
-    public function __construct(protected SmartFallback $smartFallback)
-    {
-    }
+    public function __construct(protected SmartFallback $smartFallback) {}
 
     public function handle(): void
     {

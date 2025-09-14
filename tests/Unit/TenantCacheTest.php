@@ -53,8 +53,12 @@ describe('Tenant Cache Service', function () {
             $routesPath = storage_path('framework/testing/tenant-routes');
             $filePath = "{$routesPath}/example.com.php";
 
-            if (!is_dir($routesPath)) mkdir($routesPath, 0755, true);
-            if (file_exists($filePath)) unlink($filePath);
+            if (! is_dir($routesPath)) {
+                mkdir($routesPath, 0755, true);
+            }
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
 
             config(['singledb-tenancy.routing.custom_routes_path' => $routesPath]);
 
@@ -68,7 +72,9 @@ describe('Tenant Cache Service', function () {
 
             // Cleanup
             unlink($filePath);
-            if (is_dir($routesPath)) rmdir($routesPath);
+            if (is_dir($routesPath)) {
+                rmdir($routesPath);
+            }
         });
     });
 });

@@ -14,7 +14,7 @@ describe('Tenant Cache Tags', function () {
             $reflection = new \ReflectionClass($this->cache);
             $method = $reflection->getMethod('getCacheTags');
             $method->setAccessible(true);
-            
+
             expect($method->invoke($this->cache))->toBe(['tenant_resolution']);
         });
 
@@ -22,7 +22,7 @@ describe('Tenant Cache Tags', function () {
             // Verify cache methods don't throw exceptions with array cache driver
             expect(function () {
                 $this->cache->flush();
-                $this->cache->flushAll(); 
+                $this->cache->flushAll();
                 $this->cache->forgetTenantByDomain('example.com');
             })->not()->toThrow(Exception::class);
         });

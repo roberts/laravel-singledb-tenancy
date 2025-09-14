@@ -22,9 +22,9 @@ describe('Events and Listeners', function () {
             $tenant = new Tenant([
                 'name' => 'Test Tenant',
                 'slug' => 'test-tenant',
-                'domain' => 'test.example'
+                'domain' => 'test.example',
             ]);
-            
+
             // Manually fire the event since Event::fake() prevents model events
             event(new TenantCreated($tenant));
 
@@ -47,22 +47,22 @@ describe('Events and Listeners', function () {
     describe('CacheTenantsExist Listener', function () {
         it('sets cache when handling event', function () {
             $listener = new CacheTenantsExist(app(SmartFallback::class));
-            
+
             expect(Cache::get(SmartFallback::CACHE_KEY))->toBeNull();
-            
+
             $listener->handle();
-            
+
             expect(Cache::get(SmartFallback::CACHE_KEY))->toBeTrue();
         });
 
         it('updates cache when called multiple times', function () {
             $listener = new CacheTenantsExist(app(SmartFallback::class));
-            
+
             // Call multiple times
             $listener->handle();
             $listener->handle();
             $listener->handle();
-            
+
             expect(Cache::get(SmartFallback::CACHE_KEY))->toBeTrue();
         });
     });
@@ -72,7 +72,7 @@ describe('Events and Listeners', function () {
             Event::fake();
 
             $tenant = Tenant::factory()->create();
-            
+
             // Simulate tenant resolution (would normally happen in middleware)
             event(new \Roberts\LaravelSingledbTenancy\Events\TenantResolved($tenant));
 
@@ -85,12 +85,12 @@ describe('Events and Listeners', function () {
     describe('Tenant Lifecycle Events', function () {
         it('fires suspended event when tenant is suspended', function () {
             Event::fake();
-            
+
             $tenant = Tenant::factory()->create();
-            
+
             // Manually fire the event since Event::fake() prevents model events
             event(new \Roberts\LaravelSingledbTenancy\Events\TenantSuspended($tenant));
-            
+
             Event::assertDispatched(\Roberts\LaravelSingledbTenancy\Events\TenantSuspended::class, function ($event) use ($tenant) {
                 return $event->tenant->id === $tenant->id;
             });
@@ -98,12 +98,12 @@ describe('Events and Listeners', function () {
 
         it('fires reactivated event when tenant is reactivated', function () {
             Event::fake();
-            
+
             $tenant = Tenant::factory()->create();
-            
+
             // Manually fire the event since Event::fake() prevents model events
             event(new \Roberts\LaravelSingledbTenancy\Events\TenantReactivated($tenant));
-            
+
             Event::assertDispatched(\Roberts\LaravelSingledbTenancy\Events\TenantReactivated::class, function ($event) use ($tenant) {
                 return $event->tenant->id === $tenant->id;
             });
@@ -111,12 +111,12 @@ describe('Events and Listeners', function () {
 
         it('fires deleted event when tenant is force deleted', function () {
             Event::fake();
-            
+
             $tenant = Tenant::factory()->create();
-            
+
             // Manually fire the event since Event::fake() prevents model events
             event(new \Roberts\LaravelSingledbTenancy\Events\TenantDeleted($tenant));
-            
+
             Event::assertDispatched(\Roberts\LaravelSingledbTenancy\Events\TenantDeleted::class, function ($event) use ($tenant) {
                 return $event->tenant->id === $tenant->id;
             });

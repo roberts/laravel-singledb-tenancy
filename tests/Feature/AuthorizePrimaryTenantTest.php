@@ -29,7 +29,7 @@ describe('AuthorizePrimaryTenant Middleware', function () {
     it('aborts with 404 when no tenant is set', function () {
         // Create a tenant so we're not in fallback mode
         Tenant::factory()->create(['id' => 2]);
-        
+
         tenant_context()->clear();
 
         $this->get('/_test/protected-route')->assertNotFound();

@@ -11,9 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AuthorizePrimaryTenant
 {
-    public function __construct(protected SmartFallback $smartFallback)
-    {
-    }
+    public function __construct(protected SmartFallback $smartFallback) {}
 
     public function handle(Request $request, Closure $next): Response
     {

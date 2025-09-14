@@ -65,7 +65,7 @@ class Tenant extends Model
         static::restored(function ($tenant) {
             event(new \Roberts\LaravelSingledbTenancy\Events\TenantReactivated($tenant));
         });
-        
+
         static::forceDeleted(function ($tenant) {
             event(new \Roberts\LaravelSingledbTenancy\Events\TenantDeleted($tenant));
         });

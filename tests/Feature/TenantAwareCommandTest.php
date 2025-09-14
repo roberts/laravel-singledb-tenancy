@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\Artisan;
 use Roberts\LaravelSingledbTenancy\Commands\TenantAwareCommand;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 

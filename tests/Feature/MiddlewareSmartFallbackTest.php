@@ -19,6 +19,7 @@ describe('SmartFallback in TenantResolutionMiddleware', function () {
             $response = $this->middleware->handle($request, function ($req) {
                 expect(current_tenant())->toBeNull()
                     ->and(has_tenant())->toBeFalse();
+
                 return response('OK');
             });
 
@@ -33,6 +34,7 @@ describe('SmartFallback in TenantResolutionMiddleware', function () {
 
             $response = $this->middleware->handle($request, function ($req) use ($tenant) {
                 expect(current_tenant_id())->toBe($tenant->id);
+
                 return response('OK');
             });
 
@@ -52,6 +54,7 @@ describe('SmartFallback in TenantResolutionMiddleware', function () {
             $response = $this->middleware->handle($request, function ($req) {
                 expect(current_tenant_id())->toBe(1)
                     ->and(current_tenant()->name)->toBe('Primary');
+
                 return response('OK');
             });
 
@@ -64,6 +67,7 @@ describe('SmartFallback in TenantResolutionMiddleware', function () {
 
             $response = $this->middleware->handle($request, function ($req) use ($tenant) {
                 expect(current_tenant_id())->toBe($tenant->id);
+
                 return response('OK');
             });
 
@@ -78,6 +82,7 @@ describe('SmartFallback in TenantResolutionMiddleware', function () {
             $response = $this->middleware->handle($request, function ($req) {
                 // Should fallback to primary tenant (ID 1) since it exists
                 expect(current_tenant_id())->toBe(1);
+
                 return response('OK');
             });
 
@@ -92,6 +97,7 @@ describe('SmartFallback in TenantResolutionMiddleware', function () {
 
             $response = $this->middleware->handle($request, function ($req) {
                 expect(current_tenant_id())->toBe(1); // Should fallback to primary tenant
+
                 return response('OK');
             });
 

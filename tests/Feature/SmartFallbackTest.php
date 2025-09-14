@@ -45,7 +45,7 @@ describe('SmartFallback Service', function () {
         Event::fake();
 
         $tenant = Tenant::factory()->make();
-        
+
         // Manually fire the event since Event::fake() prevents model events
         event(new TenantCreated($tenant));
 

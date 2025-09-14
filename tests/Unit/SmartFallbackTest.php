@@ -9,7 +9,7 @@ use Roberts\LaravelSingledbTenancy\Services\SmartFallback;
 
 beforeEach(function () {
     $this->smartFallback = app(SmartFallback::class);
-    
+
     // Clear cache before each test
     Cache::forget(SmartFallback::CACHE_KEY);
 });
@@ -108,7 +108,7 @@ describe('SmartFallback Service', function () {
         // Create multiple tenants to avoid issues with tenant ID 1
         $tenant1 = Tenant::factory()->create();
         $tenant2 = Tenant::factory()->create();
-        
+
         // Delete the non-primary tenant
         $tenantToDelete = $tenant1->id !== 1 ? $tenant1 : $tenant2;
         $tenantToDelete->delete(); // Soft delete
