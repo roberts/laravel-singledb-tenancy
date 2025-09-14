@@ -2,20 +2,21 @@
 
 namespace Roberts\LaravelSingledbTenancy;
 
-use Illuminate\Routing\Router;
 use Roberts\LaravelSingledbTenancy\Commands\AddTenantColumnCommand;
 use Roberts\LaravelSingledbTenancy\Commands\CacheFallbackStatusCommand;
 use Roberts\LaravelSingledbTenancy\Commands\TenancyInfoCommand;
 use Roberts\LaravelSingledbTenancy\Commands\TenantAwareCommand;
 use Roberts\LaravelSingledbTenancy\Commands\TenantCacheClearCommand;
 use Roberts\LaravelSingledbTenancy\Events\TenantCreated;
-use Roberts\LaravelSingledbTenancy\Http\Middleware\AuthorizePrimaryTenant;
 use Roberts\LaravelSingledbTenancy\Listeners\CacheTenantsExist;
 use Roberts\LaravelSingledbTenancy\Context\TenantContext;
+use Roberts\LaravelSingledbTenancy\Middleware\AuthorizePrimaryTenant;
 use Roberts\LaravelSingledbTenancy\Middleware\TenantResolutionMiddleware;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 use Roberts\LaravelSingledbTenancy\Observers\TenantObserver;
 use Roberts\LaravelSingledbTenancy\Resolvers\DomainResolver;
+use Roberts\LaravelSingledbTenancy\Services\SmartFallback;
+use Roberts\LaravelSingledbTenancy\Services\SuperAdmin;
 use Roberts\LaravelSingledbTenancy\Services\TenantCache;
 use Roberts\LaravelSingledbTenancy\Services\TenantRouteManager;
 use Spatie\LaravelPackageTools\Package;
@@ -43,11 +44,11 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
         $this->app->singleton(TenantContext::class);
 
         // Register tenant resolution services
-        $this->app->singleton(Services\TenantCache::class);
-        $this->app->singleton(Services\DomainResolver::class);
-        $this->app->singleton(Services\TenantRouteManager::class);
-        $this->app->singleton(Services\SuperAdmin::class);
-        $this->app->singleton(Services\SmartFallback::class);
+        $this->app->singleton(TenantCache::class);
+        $this->app->singleton(DomainResolver::class);
+        $this->app->singleton(TenantRouteManager::class);
+        $this->app->singleton(SuperAdmin::class);
+        $this->app->singleton(SmartFallback::class);
 
         $this->app->bind('command.tenancy:aware', TenantAwareCommand::class);
     }
@@ -55,6 +56,7 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         $this->app['router']->aliasMiddleware('auth.primary', AuthorizePrimaryTenant::class);
+        $this->app['router']->aliasMiddleware('auth.tenant', TenantResolutionMiddleware::class);
 
         $this->app['events']->listen(
             TenantCreated::class,

@@ -29,13 +29,6 @@ class AddTenantColumnCommand extends Command
         $table = $this->argument('table');
         $tenantColumn = 'tenant_id';
 
-        // Ensure we have string values
-        if (! is_string($table)) {
-            $this->error('Table name must be a string.');
-
-            return self::FAILURE;
-        }
-
         // Validate table name
         if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $table)) {
             $this->error('Invalid table name. Table names must contain only letters, numbers, and underscores.');
