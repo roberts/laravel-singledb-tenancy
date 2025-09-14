@@ -12,7 +12,7 @@ it('clears tenant cache using tags', function () {
     ]);
 
     $cache = app(TenantCache::class);
-    
+
     // Cache the tenant by resolving it
     $resolved = $cache->getTenantByDomain('example.test');
     expect($resolved)->not()->toBeNull();
@@ -36,7 +36,7 @@ it('clears cache for specific tenant', function () {
     ]);
 
     $cache = app(TenantCache::class);
-    
+
     // Cache the tenant
     $cache->getTenantByDomain('example.test');
 
@@ -53,7 +53,7 @@ it('clears all tenant cache entries', function () {
     ]);
 
     $cache = app(TenantCache::class);
-    
+
     // Cache the tenant
     $cache->getTenantByDomain('example.test');
 

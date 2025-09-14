@@ -63,7 +63,7 @@ class TenantCache
         try {
             // Use Cache facade for tagged operations (supports Redis/Memcached)
             $cacheStore = $storeString === 'default' ? Cache::store() : Cache::store($storeString);
-            
+
             // Check if the store supports tagging
             if (method_exists($cacheStore, 'tags')) {
                 $taggedCache = $cacheStore->tags($tags);
@@ -72,7 +72,7 @@ class TenantCache
                 // Cache driver doesn't support tags, fall back to manual clearing
                 $this->clearCacheManually();
             }
-        } catch (\BadMethodCallException | \Exception $e) {
+        } catch (\BadMethodCallException|\Exception $e) {
             // Cache driver doesn't support tags, fall back to manual clearing
             $this->clearCacheManually();
         }
@@ -136,11 +136,11 @@ class TenantCache
 
         try {
             $cacheStore = $storeString === 'default' ? Cache::store() : Cache::store($storeString);
-            
+
             if (method_exists($cacheStore, 'tags')) {
                 $cacheStore->tags($tags)->forget($key);
             }
-        } catch (\BadMethodCallException | \Exception $e) {
+        } catch (\BadMethodCallException|\Exception $e) {
             // Ignore errors - this is best effort
         }
     }
@@ -165,9 +165,8 @@ class TenantCache
      * Cache with tags if supported, fallback to regular cache.
      *
      * @template T
-     * @param string $key
-     * @param int $ttl
-     * @param \Closure(): T $callback
+     *
+     * @param  \Closure(): T  $callback
      * @return T
      */
     protected function rememberWithTags(string $key, int $ttl, \Closure $callback)
@@ -179,7 +178,7 @@ class TenantCache
         try {
             // Use Cache facade for tagged operations (supports Redis/Memcached)
             $cacheStore = $storeString === 'default' ? Cache::store() : Cache::store($storeString);
-            
+
             // Check if the store supports tagging
             if (method_exists($cacheStore, 'tags')) {
                 return $cacheStore->tags($tags)->remember($key, $ttl, $callback);
@@ -187,7 +186,7 @@ class TenantCache
                 // Fall back to regular cache
                 return $this->getCache()->remember($key, $ttl, $callback);
             }
-        } catch (\BadMethodCallException | \Exception $e) {
+        } catch (\BadMethodCallException|\Exception $e) {
             // Fall back to regular cache
             return $this->getCache()->remember($key, $ttl, $callback);
         }

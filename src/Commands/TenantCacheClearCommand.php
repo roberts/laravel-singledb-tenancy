@@ -21,8 +21,10 @@ class TenantCacheClearCommand extends Command
         if ($tenantOption) {
             if (! is_string($tenantOption)) {
                 $this->error('Tenant option must be a string');
+
                 return self::FAILURE;
             }
+
             return $this->clearTenantSpecific($cache, $tenantOption);
         }
 
@@ -41,9 +43,11 @@ class TenantCacheClearCommand extends Command
         try {
             $cache->flush();
             $this->info('✓ Tenant cache cleared successfully');
+
             return self::SUCCESS;
         } catch (\Exception $e) {
             $this->error("Failed to clear tenant cache: {$e->getMessage()}");
+
             return self::FAILURE;
         }
     }
@@ -55,9 +59,11 @@ class TenantCacheClearCommand extends Command
         try {
             $cache->flushAll();
             $this->info('✓ All tenant cache cleared successfully');
+
             return self::SUCCESS;
         } catch (\Exception $e) {
             $this->error("Failed to clear all tenant cache: {$e->getMessage()}");
+
             return self::FAILURE;
         }
     }
@@ -68,13 +74,14 @@ class TenantCacheClearCommand extends Command
 
         try {
             $cache->forgetTenantByDomain($domain);
-            
+
             // Always show success message since we attempted to clear
             $this->info("✓ Cache cleared for tenant: {$domain}");
-            
+
             return self::SUCCESS;
         } catch (\Exception $e) {
             $this->error("Failed to clear cache for tenant {$domain}: {$e->getMessage()}");
+
             return self::FAILURE;
         }
     }
