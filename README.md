@@ -83,19 +83,6 @@ The package provides extensive configuration options in `config/singledb-tenancy
 ```php
 'failure_handling' => [
     'unresolved_tenant' => 'fallback', // fallback|continue|exception|redirect
-    'suspended_tenant' => 'show_page', // show_page|redirect|block
-    'suspended_view' => 'tenant.suspended',
-],
-```
-
-### Smart Fallback Logic
-
-```php
-'fallback' => [
-    'enabled' => true,
-    'primary_tenant_id' => 1,
-    'skip_when_no_tenants' => true,
-    'respect_suspension' => true,
 ],
 ```
 
@@ -230,7 +217,7 @@ Support tenant-specific route files in `routes/tenants/`:
 
 ```
 routes/
-├── web.php              # Default routes
+├── web.php              # Default routes for all tenants
 └── tenants/
     ├── acme.php         # Routes for 'acme' tenant
     └── enterprise.php   # Routes for 'enterprise' tenant
@@ -308,21 +295,6 @@ The Smart Fallback Logic provides automatic fallback to a primary tenant when no
 4. **Smart Skipping**: Automatically skips fallback when no tenants exist in the database
 5. **Suspension Respect**: Won't fallback to suspended primary tenant
 
-### Configuration
-
-```php
-'failure_handling' => [
-    'unresolved_tenant' => 'fallback', // Enable fallback mode
-],
-
-'fallback' => [
-    'enabled' => true,                 // Enable/disable fallback logic
-    'primary_tenant_id' => 1,          // ID of primary tenant
-    'skip_when_no_tenants' => true,    // Skip when database is empty
-    'respect_suspension' => true,      // Don't fallback to suspended tenant
-],
-```
-
 ### Caching Behavior
 
 - Primary tenant existence is cached permanently once confirmed
@@ -382,13 +354,7 @@ When no tenant can be resolved from the request:
 - `exception` - Throw RuntimeException
 - `redirect` - Redirect to specified route
 
-### Suspended Tenant
-
-When a tenant is suspended (soft deleted):
-
-- `show_page` - Display suspension notice
-- `block` - Return 403 Forbidden
-- `redirect` - Redirect to specified route
+Suspended (soft deleted) tenants are automatically blocked and will not be resolved.
 
 ## Testing
 
@@ -443,7 +409,7 @@ $tenant->suspended_at; // Soft delete timestamp
 // Methods
 $tenant->isActive();                    // Check if tenant is active
 $tenant->suspend();                     // Suspend tenant
-$tenant->reactivate();                  // Reactivate suspended tenant
+$tenant->reactivate();                  // Reactivate tenant
 $tenant->url($path = '/');              // Generate tenant URL
 Tenant::resolveByDomain($domain);       // Find tenant by domain
 Tenant::resolveBySlug($slug);           // Find tenant by slug
@@ -534,17 +500,7 @@ return [
     // Error handling
     'failure_handling' => [
         'unresolved_tenant' => 'fallback', // fallback|continue|exception|redirect
-        'suspended_tenant' => 'show_page', // show_page|redirect|block
-        'suspended_view' => 'tenant.suspended',
         'redirect_route' => 'tenant.select',
-    ],
-    
-    // Smart Fallback Logic
-    'fallback' => [
-        'enabled' => true,
-        'primary_tenant_id' => 1,
-        'skip_when_no_tenants' => true,
-        'respect_suspension' => true,
     ],
 ];
 ```
@@ -565,6 +521,19 @@ FORCE_TENANT_SLUG=dev-tenant
 ```
 
 ## Migration
+
+This package includes a tenant migration that creates the `tenants` table:
+
+```php
+Schema::create('tenants', function (Blueprint $table) {
+    $table->id();
+    $table->string('name');
+    $table->string('slug')->unique();
+    $table->string('domain')->nullable()->unique();
+    $table->timestamps();
+    $table->softDeletes('suspended_at');
+});
+```
 
 Add `tenant_id` to your existing tables:
 
@@ -587,7 +556,7 @@ php artisan tenancy:add-tenant-column posts
 3. **Test tenant isolation** thoroughly to prevent data leaks
 4. **Use tenant context helpers** instead of manual database queries
 5. **Configure reserved subdomains** to avoid conflicts with system routes
-6. **Implement proper error handling** for unresolved or suspended tenants
+6. **Implement proper error handling** for unresolved tenants
 
 ## Troubleshooting
 

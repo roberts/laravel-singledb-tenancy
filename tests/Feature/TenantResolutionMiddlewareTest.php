@@ -132,12 +132,7 @@ it('uses forced tenant in development', function () {
     expect(current_tenant()->id)->toBe($tenant->id);
 });
 
-it('handles suspended tenant by showing page', function () {
-    config([
-        'singledb-tenancy.failure_handling.suspended_tenant' => 'show_page',
-        'singledb-tenancy.failure_handling.suspended_view' => 'errors.503',
-    ]);
-
+it('does not resolve suspended tenants', function () {
     $tenant = Tenant::factory()->create([
         'id' => 2, // Use ID 2 to avoid deletion protection
         'domain' => 'example.com',
@@ -150,31 +145,7 @@ it('handles suspended tenant by showing page', function () {
     $middleware = app(TenantResolutionMiddleware::class);
 
     $response = $middleware->handle($request, function ($req) {
-        return response('Should not reach here');
-    });
-
-    // Since suspended tenants are soft deleted, they won't be found by resolvers
-    // So this should continue without tenant (or handle according to unresolved_tenant config)
-    expect($response->getStatusCode())->toBe(200);
-    expect(current_tenant())->toBeNull();
-});
-
-it('handles suspended tenant by blocking access', function () {
-    config(['singledb-tenancy.failure_handling.suspended_tenant' => 'block']);
-
-    $tenant = Tenant::factory()->create([
-        'id' => 2, // Use ID 2 to avoid deletion protection
-        'domain' => 'example.com',
-    ]);
-
-    // Suspend the tenant (soft delete)
-    $tenant->suspend();
-
-    $request = Request::create('https://example.com/dashboard');
-    $middleware = app(TenantResolutionMiddleware::class);
-
-    $response = $middleware->handle($request, function ($req) {
-        return response('Should not reach here');
+        return response('OK');
     });
 
     // Since suspended tenants are soft deleted, they won't be found by resolvers

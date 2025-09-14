@@ -65,7 +65,7 @@ class TenantResolutionMiddleware
 
             if ($tenant) {
                 if ($this->isTenantSuspended($tenant)) {
-                    return $this->handleSuspendedTenant($tenant, $request);
+                    abort(403, 'Tenant is suspended');
                 }
 
                 $this->tenantContext->set($tenant);
@@ -144,25 +144,6 @@ class TenantResolutionMiddleware
     protected function isTenantSuspended(Tenant $tenant): bool
     {
         return ! $tenant->isActive();
-    }
-
-    /**
-     * Handle suspended tenant.
-     */
-    protected function handleSuspendedTenant(Tenant $tenant, Request $request): Response
-    {
-        $handling = config('singledb-tenancy.failure_handling.suspended_tenant', 'show_page');
-
-        $redirectRoute = config('singledb-tenancy.failure_handling.redirect_route', 'home');
-        $suspendedView = config('singledb-tenancy.failure_handling.suspended_view', 'tenant.suspended');
-
-        return match ($handling) {
-            'redirect' => redirect()->route(is_string($redirectRoute) ? $redirectRoute : 'home'),
-            'block' => abort(403, 'Tenant is suspended'),
-            default => response()->view(is_string($suspendedView) ? $suspendedView : 'tenant.suspended', [
-                'tenant' => $tenant,
-            ], 503),
-        };
     }
 
     /**

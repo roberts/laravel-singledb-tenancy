@@ -166,17 +166,6 @@ return [
         'unresolved_tenant' => 'fallback',
 
         /*
-        | What to do when tenant is suspended/inactive.
-        | Options: 'show_page', 'redirect', 'block'
-        */
-        'suspended_tenant' => 'show_page',
-
-        /*
-        | View to show when tenant is suspended.
-        */
-        'suspended_view' => 'tenant.suspended',
-
-        /*
         | Route to redirect to on failures.
         */
         'redirect_route' => 'home',
