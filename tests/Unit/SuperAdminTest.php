@@ -24,7 +24,7 @@ class SuperAdminTest extends TestCase
     {
         config(['singledb-tenancy.super_admin.email' => 'super@admin.com']);
 
-        $user = new User();
+        $user = new User;
         $user->email = 'super@admin.com';
 
         $this->assertTrue($this->superAdmin->is($user));
@@ -35,7 +35,7 @@ class SuperAdminTest extends TestCase
     {
         config(['singledb-tenancy.super_admin.email' => 'super@admin.com']);
 
-        $user = new User();
+        $user = new User;
         $user->email = 'regular@user.com';
 
         $this->assertFalse($this->superAdmin->is($user));
@@ -54,7 +54,7 @@ class SuperAdminTest extends TestCase
     {
         config(['singledb-tenancy.super_admin.email' => null]);
 
-        $user = new User();
+        $user = new User;
         $user->email = 'super@admin.com';
 
         $this->assertFalse($this->superAdmin->is($user));
