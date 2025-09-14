@@ -33,7 +33,7 @@ class TenantAwareJobTest extends TestCase
             return $job->tenantId === $tenant->id;
         });
 
-        (new TestJob())->handle();
+        (new TestJob)->handle();
 
         $this->assertDatabaseHas('posts', [
             'tenant_id' => $tenant->id,

@@ -68,7 +68,7 @@ class TestCommand extends TenantAwareCommand
 
     protected function handleTenant(): void
     {
-        $this->info("Handled for tenant: ".current_tenant_id());
+        $this->info('Handled for tenant: '.current_tenant_id());
     }
 }
 
@@ -78,6 +78,6 @@ class TestCommandWithContextCheck extends TenantAwareCommand
 
     protected function handleTenant(): void
     {
-        $this->info("Context tenant ID: ".current_tenant_id());
+        $this->info('Context tenant ID: '.current_tenant_id());
     }
 }
