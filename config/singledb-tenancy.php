@@ -98,6 +98,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Super Admin
+    |--------------------------------------------------------------------------
+    |
+    | The email address of the user who has super admin privileges over the
+    | tenancy system, allowing access to features like the Filament panel.
+    |
+    */
+    'super_admin' => [
+        'email' => env('TENANCY_SUPER_ADMIN_EMAIL'), // @phpstan-ignore larastan.noEnvCallsOutsideOfConfig
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Development
     |--------------------------------------------------------------------------
     |

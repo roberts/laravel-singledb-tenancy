@@ -407,6 +407,43 @@ When no tenant can be resolved from the request:
 
 Suspended (soft deleted) tenants are automatically blocked and will not be resolved.
 
+## Security
+
+### Super Admin
+
+You can designate a single "super admin" user who has privileges over the entire tenancy system (e.g., for accessing a future admin panel). This is configured by setting an environment variable:
+
+```bash
+# .env
+TENANCY_SUPER_ADMIN_EMAIL=super@admin.com
+```
+
+The package provides a `SuperAdmin` service to check if a user is the designated super admin:
+
+```php
+use Roberts\LaravelSingledbTenancy\Services\SuperAdmin;
+
+$user = auth()->user();
+
+if (app(SuperAdmin::class)->is($user)) {
+    // User is the super admin
+}
+```
+
+### Primary Tenant Authorization
+
+The package includes a middleware to restrict access to routes that should only be available on the primary tenant's domain (i.e., the tenant with ID `1`). This is useful for creating a centralized admin panel.
+
+To use it, simply add the `auth.primary` middleware to your routes:
+
+```php
+use Roberts\LaravelSingledbTenancy\Middleware\AuthorizePrimaryTenant;
+
+Route::get('/tenancy-dashboard', ...)->middleware(AuthorizePrimaryTenant::class);
+```
+
+If a user attempts to access this route from any domain other than the primary tenant's, they will receive a `404 Not Found` error.
+
 ## Testing
 
 Run the comprehensive test suite:
