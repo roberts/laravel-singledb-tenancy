@@ -130,6 +130,68 @@ Route::middleware(['web', 'tenant:domain'])->group(function () {
 
 ## Advanced Features
 
+### Tenant-Aware Jobs
+
+To make your queued jobs tenant-aware, simply use the `TenantAware` trait. It automatically captures the tenant context when the job is dispatched and restores it when the job is processed.
+
+```php
+use Roberts\LaravelSingledbTenancy\Concerns\TenantAware;
+
+class ProcessReport implements ShouldQueue
+{
+    use TenantAware;
+
+    public function handle()
+    {
+        // All Eloquent queries are automatically scoped to the correct tenant.
+        $sales = Sale::all();
+    }
+}
+```
+
+### Tenant-Aware Commands
+
+Create tenant-aware artisan commands by extending the `TenantAwareCommand` class. This automatically provides `--tenant=<id>` and `--all-tenants` options.
+
+Implement your logic in the `handleTenant()` method, where the tenant context is guaranteed to be set.
+
+```php
+use Roberts\LaravelSingledbTenancy\Commands\TenantAwareCommand;
+
+class GenerateReport extends TenantAwareCommand
+{
+    protected $signature = 'report:generate {--tenant=} {--all-tenants}';
+    protected $description = 'Generate a sales report.';
+
+    public function handleTenant()
+    {
+        $this->info('Generating report for: ' . current_tenant()->name);
+    }
+}
+```
+
+### Tenant Lifecycle Events
+
+The package dispatches events to allow you to hook into the tenant lifecycle:
+
+- `TenantCreated`: After a new tenant is created.
+- `TenantResolved`: After the tenant context is set for a request.
+- `TenantSuspended`: After a tenant is suspended.
+- `TenantReactivated`: After a tenant is reactivated.
+- `TenantDeleted`: After a tenant is permanently deleted.
+
+You can listen for these events in your `EventServiceProvider`:
+
+```php
+use Roberts\LaravelSingledbTenancy\Events\TenantCreated;
+
+protected $listen = [
+    TenantCreated::class => [
+        'App\Listeners\SetupNewTenant',
+    ],
+];
+```
+
 ### Tenant Context Management
 
 The package provides global helper functions for tenant context:
