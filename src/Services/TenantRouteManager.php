@@ -78,5 +78,4 @@ class TenantRouteManager
     {
         return base_path("routes/tenants/{$identifier}.php");
     }
-
 }
