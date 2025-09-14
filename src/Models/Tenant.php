@@ -66,7 +66,7 @@ class Tenant extends Model
     /**
      * Scope for active (non-deleted) tenants.
      *
-     * @param \Illuminate\Database\Eloquent\Builder<static> $query
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
      * @return \Illuminate\Database\Eloquent\Builder<static>
      */
     public function scopeActive($query)

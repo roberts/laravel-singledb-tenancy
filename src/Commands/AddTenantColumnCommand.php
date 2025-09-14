@@ -32,11 +32,13 @@ class AddTenantColumnCommand extends Command
         // Ensure we have string values
         if (! is_string($table)) {
             $this->error('Table name must be a string.');
+
             return self::FAILURE;
         }
 
         if (! is_string($tenantColumn)) {
             $this->error('Tenant column name must be a string.');
+
             return self::FAILURE;
         }
 

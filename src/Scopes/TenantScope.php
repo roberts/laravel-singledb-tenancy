@@ -18,7 +18,7 @@ class TenantScope implements Scope
     {
         // Get TenantCache instance to check if tenants exist
         $tenantCache = app(TenantCache::class);
-        
+
         // If no tenants exist in the system, don't apply any scoping
         if (! $tenantCache->tenantsExist()) {
             return;
@@ -46,13 +46,14 @@ class TenantScope implements Scope
         }
 
         $column = config('singledb-tenancy.tenant_column', 'tenant_id');
+
         return is_string($column) ? $column : 'tenant_id';
     }
 
     /**
      * Extend the query builder with the needed functions.
      *
-     * @param Builder<Model> $builder
+     * @param  Builder<Model>  $builder
      */
     public function extend(Builder $builder): void
     {

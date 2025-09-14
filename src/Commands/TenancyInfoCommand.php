@@ -20,7 +20,7 @@ class TenancyInfoCommand extends Command
         // Basic configuration
         $tenantModel = config('singledb-tenancy.tenant_model');
         $tenantColumn = config('singledb-tenancy.tenant_column');
-        
+
         $tenantModelStr = is_string($tenantModel) ? $tenantModel : 'Unknown';
         $tenantColumnStr = is_string($tenantColumn) ? $tenantColumn : 'tenant_id';
 

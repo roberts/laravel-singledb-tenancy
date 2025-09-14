@@ -55,7 +55,7 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
 
         // Register middleware
         $this->registerMiddleware();
-        
+
         // Register observers
         $this->registerObservers();
     }
@@ -76,7 +76,7 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
     protected function registerObservers(): void
     {
         $tenantModel = config('singledb-tenancy.tenant_model', \Roberts\LaravelSingledbTenancy\Models\Tenant::class);
-        
+
         if (is_string($tenantModel) && class_exists($tenantModel)) {
             $tenantModel::observe(\Roberts\LaravelSingledbTenancy\Observers\TenantObserver::class);
         }

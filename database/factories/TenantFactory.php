@@ -15,6 +15,7 @@ class TenantFactory extends Factory
 
     /**
      * @return array<string, string>
+     *
      * @phpstan-ignore-next-line method.childReturnType
      */
     public function definition(): array

@@ -167,6 +167,7 @@ class TenantCache
     protected function getCacheTtl(): int
     {
         $ttl = config('singledb-tenancy.caching.ttl', 3600);
+
         return is_int($ttl) ? $ttl : 3600;
     }
 
@@ -178,11 +179,11 @@ class TenantCache
     protected function getCacheTags(): array
     {
         $tags = config('singledb-tenancy.caching.tags', ['tenant_resolution']);
-        
+
         if (! is_array($tags)) {
             return ['tenant_resolution'];
         }
-        
+
         /** @var array<string> */
         return array_filter($tags, 'is_string');
     }
@@ -193,6 +194,7 @@ class TenantCache
     private function getConfigString(string $key, string $default = ''): string
     {
         $value = config($key, $default);
+
         return is_string($value) ? $value : $default;
     }
 
@@ -225,7 +227,7 @@ class TenantCache
 
         // If not cached or false, check database
         $exists = $this->resolveTenantsExist();
-        
+
         // If tenants exist, cache permanently (no TTL)
         if ($exists) {
             $this->getCache()->forever($key, true);
@@ -253,7 +255,7 @@ class TenantCache
 
         // If not cached or false, check database
         $exists = $this->resolvePrimaryTenantExists();
-        
+
         // If tenant 1 exists, cache permanently (no TTL)
         if ($exists) {
             $this->getCache()->forever($key, true);
@@ -288,7 +290,7 @@ class TenantCache
         }
 
         $this->getCache()->forget($this->getTenantExistenceKey());
-        
+
         // Note: We don't invalidate primary tenant cache since it can't be deleted
     }
 
@@ -352,7 +354,7 @@ class TenantCache
         if (is_string($tenantModel) && class_exists($tenantModel)) {
             return $tenantModel::exists();
         }
-        
+
         return false;
     }
 
@@ -366,7 +368,7 @@ class TenantCache
         if (is_string($tenantModel) && class_exists($tenantModel)) {
             return $tenantModel::where('id', 1)->exists();
         }
-        
+
         return false;
     }
 
@@ -380,7 +382,7 @@ class TenantCache
         if (is_string($tenantModel) && class_exists($tenantModel)) {
             return $tenantModel::find(1);
         }
-        
+
         return null;
     }
 }

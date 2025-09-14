@@ -87,6 +87,7 @@ class SubdomainResolver
     protected function getBaseDomain(): string
     {
         $domain = config('singledb-tenancy.resolution.subdomain.base_domain', 'localhost');
+
         return is_string($domain) ? $domain : 'localhost';
     }
 
@@ -98,11 +99,11 @@ class SubdomainResolver
     protected function getReservedSubdomains(): array
     {
         $reserved = config('singledb-tenancy.resolution.subdomain.reserved', []);
-        
+
         if (! is_array($reserved)) {
             return [];
         }
-        
+
         /** @var array<string> */
         return array_filter($reserved, 'is_string');
     }

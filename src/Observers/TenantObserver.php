@@ -20,7 +20,7 @@ class TenantObserver
     {
         // When a tenant is created, we don't need to invalidate the existence cache
         // since it will be permanently cached once true
-        
+
         // Clear specific tenant caches if they exist
         $this->tenantCache->forgetTenant($tenant);
     }
@@ -41,7 +41,7 @@ class TenantObserver
     {
         // Clear cached data for this tenant
         $this->tenantCache->forgetTenant($tenant);
-        
+
         // If this isn't tenant ID 1, invalidate existence cache
         // (though tenant ID 1 can't be deleted due to boot protection)
         if ($tenant->id !== 1) {

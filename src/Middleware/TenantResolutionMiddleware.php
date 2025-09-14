@@ -45,11 +45,11 @@ class TenantResolutionMiddleware
         if (! $this->tenantCache->tenantsExist()) {
             // No tenants exist - check if user explicitly wants exception handling
             $handlingStrategy = config('singledb-tenancy.failure_handling.unresolved_tenant', 'continue');
-            
+
             if ($handlingStrategy === 'exception') {
                 throw new RuntimeException('Could not resolve tenant from request');
             }
-            
+
             // Skip all tenant logic and run normally
             return $next($request);
         }
@@ -77,10 +77,10 @@ class TenantResolutionMiddleware
         // No tenant resolved, try fallback to tenant ID 1
         if ($this->tenantCache->primaryTenantExists()) {
             $primaryTenant = $this->tenantCache->getPrimaryTenant();
-            
+
             if ($primaryTenant && ! $this->isTenantSuspended($primaryTenant)) {
                 $this->tenantContext->set($primaryTenant);
-                
+
                 return $next($request);
             }
         }
@@ -112,11 +112,11 @@ class TenantResolutionMiddleware
     protected function getDefaultStrategies(): array
     {
         $strategies = config('singledb-tenancy.resolution.strategies', ['domain', 'subdomain']);
-        
+
         if (! is_array($strategies)) {
             return ['domain', 'subdomain'];
         }
-        
+
         /** @var array<string> */
         return array_filter($strategies, 'is_string');
     }
@@ -152,7 +152,7 @@ class TenantResolutionMiddleware
     protected function handleSuspendedTenant(Tenant $tenant, Request $request): Response
     {
         $handling = config('singledb-tenancy.failure_handling.suspended_tenant', 'show_page');
-        
+
         $redirectRoute = config('singledb-tenancy.failure_handling.redirect_route', 'home');
         $suspendedView = config('singledb-tenancy.failure_handling.suspended_view', 'tenant.suspended');
 
