@@ -5,6 +5,7 @@ namespace Roberts\LaravelSingledbTenancy;
 use Illuminate\Routing\Router;
 use Roberts\LaravelSingledbTenancy\Commands\AddTenantColumnCommand;
 use Roberts\LaravelSingledbTenancy\Commands\TenancyInfoCommand;
+use Roberts\LaravelSingledbTenancy\Commands\TenantCacheClearCommand;
 use Roberts\LaravelSingledbTenancy\Context\TenantContext;
 use Roberts\LaravelSingledbTenancy\Middleware\TenantResolutionMiddleware;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
@@ -32,6 +33,7 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
             ->hasCommands([
                 AddTenantColumnCommand::class,
                 TenancyInfoCommand::class,
+                TenantCacheClearCommand::class,
             ]);
     }
 

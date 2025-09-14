@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Roberts\LaravelSingledbTenancy\Services;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Support\Facades\Cache;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 
 class TenantCache
@@ -24,7 +25,7 @@ class TenantCache
 
         $key = $this->getDomainCacheKey($domain);
 
-        return $this->getCache()->remember($key, $this->getCacheTtl(), function () use ($domain) {
+        return $this->rememberWithTags($key, $this->getCacheTtl(), function () use ($domain) {
             return $this->resolveTenantByDomain($domain);
         });
     }
@@ -40,13 +41,13 @@ class TenantCache
 
         $key = $this->getCustomRoutesCacheKey($identifier);
 
-        return $this->getCache()->remember($key, $this->getCacheTtl(), function () use ($identifier) {
+        return $this->rememberWithTags($key, $this->getCacheTtl(), function () use ($identifier) {
             return $this->checkCustomRouteFile($identifier);
         });
     }
 
     /**
-     * Invalidate all tenant resolution cache.
+     * Invalidate all tenant resolution cache using tags.
      * Note: This only works with cache drivers that support tags (Redis, Memcached).
      */
     public function flush(): void
@@ -55,8 +56,141 @@ class TenantCache
             return;
         }
 
-        // For cache drivers that don't support tags, cache will expire naturally
-        // This method is primarily for manual cache clearing during development
+        $tags = $this->getCacheTags();
+        $store = config('singledb-tenancy.caching.store', 'default');
+        $storeString = is_string($store) ? $store : 'default';
+
+        try {
+            // Use Cache facade for tagged operations (supports Redis/Memcached)
+            $cacheStore = $storeString === 'default' ? Cache::store() : Cache::store($storeString);
+            
+            // Check if the store supports tagging
+            if (method_exists($cacheStore, 'tags')) {
+                $taggedCache = $cacheStore->tags($tags);
+                $taggedCache->flush();
+            } else {
+                // Cache driver doesn't support tags, fall back to manual clearing
+                $this->clearCacheManually();
+            }
+        } catch (\BadMethodCallException | \Exception $e) {
+            // Cache driver doesn't support tags, fall back to manual clearing
+            $this->clearCacheManually();
+        }
+    }
+
+    /**
+     * Clear all tenant-related cache entries (including non-tagged entries).
+     */
+    public function flushAll(): void
+    {
+        if (! $this->isCacheEnabled()) {
+            return;
+        }
+
+        // Clear tagged cache first
+        $this->flush();
+
+        // Also clear any manually tracked cache keys
+        $this->clearCacheManually();
+    }
+
+    /**
+     * Forget cache for a specific tenant by domain.
+     */
+    public function forgetTenantByDomain(string $domain): bool
+    {
+        if (! $this->isCacheEnabled()) {
+            return false;
+        }
+
+        $cache = $this->getCache();
+        $cleared = false;
+
+        // Clear domain resolution cache
+        $domainKey = $this->getDomainCacheKey($domain);
+        if ($cache->forget($domainKey)) {
+            $cleared = true;
+        }
+
+        // Clear custom routes cache
+        $customRoutesKey = $this->getCustomRoutesCacheKey($domain);
+        if ($cache->forget($customRoutesKey)) {
+            $cleared = true;
+        }
+
+        // Also try to clear from tagged cache if available
+        $this->forgetFromTaggedCache($domainKey);
+        $this->forgetFromTaggedCache($customRoutesKey);
+
+        return $cleared;
+    }
+
+    /**
+     * Attempt to forget a key from tagged cache.
+     */
+    protected function forgetFromTaggedCache(string $key): void
+    {
+        $store = config('singledb-tenancy.caching.store', 'default');
+        $storeString = is_string($store) ? $store : 'default';
+        $tags = $this->getCacheTags();
+
+        try {
+            $cacheStore = $storeString === 'default' ? Cache::store() : Cache::store($storeString);
+            
+            if (method_exists($cacheStore, 'tags')) {
+                $cacheStore->tags($tags)->forget($key);
+            }
+        } catch (\BadMethodCallException | \Exception $e) {
+            // Ignore errors - this is best effort
+        }
+    }
+
+    /**
+     * Manually clear cache keys when tags aren't supported.
+     */
+    protected function clearCacheManually(): void
+    {
+        $cache = $this->getCache();
+
+        // Clear tenant existence cache
+        $cache->forget($this->getTenantExistenceKey());
+        $cache->forget($this->getPrimaryTenantKey());
+        $cache->forget($this->getPrimaryTenantModelKey());
+
+        // Note: We can't easily clear all domain/custom route keys without tags
+        // These will expire naturally based on TTL
+    }
+
+    /**
+     * Cache with tags if supported, fallback to regular cache.
+     *
+     * @template T
+     * @param string $key
+     * @param int $ttl
+     * @param \Closure(): T $callback
+     * @return T
+     */
+    protected function rememberWithTags(string $key, int $ttl, \Closure $callback)
+    {
+        $store = config('singledb-tenancy.caching.store', 'default');
+        $storeString = is_string($store) ? $store : 'default';
+        $tags = $this->getCacheTags();
+
+        try {
+            // Use Cache facade for tagged operations (supports Redis/Memcached)
+            $cacheStore = $storeString === 'default' ? Cache::store() : Cache::store($storeString);
+            
+            // Check if the store supports tagging
+            if (method_exists($cacheStore, 'tags')) {
+                return $cacheStore->tags($tags)->remember($key, $ttl, $callback);
+            } else {
+                // Fall back to regular cache
+                return $this->getCache()->remember($key, $ttl, $callback);
+            }
+        } catch (\BadMethodCallException | \Exception $e) {
+            // Fall back to regular cache
+            return $this->getCache()->remember($key, $ttl, $callback);
+        }
     }
 
     /**
@@ -243,7 +377,7 @@ class TenantCache
 
         $key = $this->getPrimaryTenantModelKey();
 
-        return $this->getCache()->remember($key, $this->getCacheTtl(), function () {
+        return $this->rememberWithTags($key, $this->getCacheTtl(), function () {
             return $this->resolvePrimaryTenant();
         });
     }
