@@ -50,7 +50,7 @@ class Tenant extends Model
         static::deleting(function ($tenant) {
             // Prevent deletion of tenant ID 1
             if ($tenant->id === 1) {
-                throw new \Exception('Tenant ID 1 cannot be deleted as it serves as the primary fallback tenant.');
+                throw new \Exception('Cannot delete Tenant 1 since it is the primary domain.');
             }
         });
     }

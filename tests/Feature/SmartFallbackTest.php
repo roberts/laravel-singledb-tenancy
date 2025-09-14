@@ -13,7 +13,7 @@ it('prevents deletion of tenant ID 1', function () {
     $tenant = Tenant::factory()->create(['id' => 1]);
 
     expect(fn () => $tenant->delete())
-        ->toThrow(Exception::class, 'Tenant ID 1 cannot be deleted as it serves as the primary fallback tenant.');
+        ->toThrow(Exception::class, 'Cannot delete Tenant 1 since it is the primary domain.');
 });
 
 it('allows deletion of other tenants', function () {
