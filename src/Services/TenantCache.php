@@ -222,7 +222,8 @@ class TenantCache
         /** @var class-string<Tenant> $tenantModel */
         $tenantModel = config('singledb-tenancy.tenant_model');
 
-        return $tenantModel::where('domain', $domain)->first();
+        // Use the model's resolveByDomain method which excludes soft-deleted tenants
+        return $tenantModel::resolveByDomain($domain);
     }
 
     /**

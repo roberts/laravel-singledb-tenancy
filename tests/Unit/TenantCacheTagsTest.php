@@ -4,33 +4,27 @@ declare(strict_types=1);
 
 use Roberts\LaravelSingledbTenancy\Services\TenantCache;
 
-it('uses cache tags when available', function () {
-    $cache = app(TenantCache::class);
-
-    // Test that getCacheTags returns the configured tags
-    $reflection = new \ReflectionClass($cache);
-    $method = $reflection->getMethod('getCacheTags');
-    $method->setAccessible(true);
-    $tags = $method->invoke($cache);
-
-    expect($tags)->toBe(['tenant_resolution']);
+beforeEach(function () {
+    $this->cache = app(TenantCache::class);
 });
 
-it('gracefully handles cache stores without tag support', function () {
-    // This test verifies that our cache methods don't throw exceptions
-    // when the cache store doesn't support tags (like array driver in tests)
+describe('Tenant Cache Tags', function () {
+    describe('Tag Support', function () {
+        it('uses cache tags when available', function () {
+            $reflection = new \ReflectionClass($this->cache);
+            $method = $reflection->getMethod('getCacheTags');
+            $method->setAccessible(true);
+            
+            expect($method->invoke($this->cache))->toBe(['tenant_resolution']);
+        });
 
-    $cache = app(TenantCache::class);
-
-    // These should not throw exceptions even with array cache driver
-    try {
-        $cache->flush();
-        $cache->flushAll();
-        $cache->forgetTenantByDomain('example.com');
-
-        // If we get here, no exceptions were thrown
-        expect(true)->toBeTrue();
-    } catch (Exception $e) {
-        $this->fail("Cache methods should not throw exceptions: {$e->getMessage()}");
-    }
+        it('gracefully handles cache stores without tag support', function () {
+            // Verify cache methods don't throw exceptions with array cache driver
+            expect(function () {
+                $this->cache->flush();
+                $this->cache->flushAll(); 
+                $this->cache->forgetTenantByDomain('example.com');
+            })->not()->toThrow(Exception::class);
+        });
+    });
 });

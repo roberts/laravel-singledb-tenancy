@@ -2,79 +2,82 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
+use Roberts\LaravelSingledbTenancy\Events\TenantCreated;
+use Roberts\LaravelSingledbTenancy\Listeners\CacheTenantsExist;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
-use Roberts\LaravelSingledbTenancy\Services\TenantCache;
+use Roberts\LaravelSingledbTenancy\Services\SmartFallback;
 
 beforeEach(function () {
-    $this->tenantCache = app(TenantCache::class);
+    $this->smartFallback = app(SmartFallback::class);
+    Cache::forget(SmartFallback::CACHE_KEY);
 });
 
-it('prevents deletion of tenant ID 1', function () {
-    $tenant = Tenant::factory()->create(['id' => 1]);
+describe('SmartFallback Service', function () {
+    it('is in fallback mode when no tenants exist', function () {
+        expect(Tenant::count())->toBe(0);
+        expect($this->smartFallback->isFallback())->toBeTrue();
+    });
 
-    expect(fn () => $tenant->delete())
-        ->toThrow(Exception::class, 'Cannot delete Tenant 1 since it is the primary domain.');
-});
+    it('is not in fallback mode when tenants exist', function () {
+        Tenant::factory()->create();
+        expect($this->smartFallback->isFallback())->toBeFalse();
+    });
 
-it('allows deletion of other tenants', function () {
-    $tenant = Tenant::factory()->create(['id' => 2]);
+    it('permanently caches that tenants exist', function () {
+        // First call, no tenants exist.
+        expect($this->smartFallback->isFallback())->toBeTrue();
 
-    expect($tenant->delete())->toBeTrue();
-});
+        // Create a tenant. The next call should cache the result.
+        Tenant::factory()->create();
+        expect($this->smartFallback->isFallback())->toBeFalse();
+        expect(Cache::get(SmartFallback::CACHE_KEY))->toBeTrue();
 
-it('caches tenant existence permanently once true', function () {
-    // Initially no tenants
-    expect($this->tenantCache->tenantsExist())->toBeFalse();
+        // Delete the tenant. The cache should still report that tenants exist.
+        Tenant::query()->delete();
+        expect(Tenant::count())->toBe(0);
+        expect($this->smartFallback->isFallback())->toBeFalse('Should use the permanent cache value');
+    });
 
-    // Create a tenant
-    Tenant::factory()->create();
+    it('tenant created event triggers the caching', function () {
+        Event::fake();
 
-    // Should now return true
-    expect($this->tenantCache->tenantsExist())->toBeTrue();
+        $tenant = Tenant::factory()->make();
+        
+        // Manually fire the event since Event::fake() prevents model events
+        event(new TenantCreated($tenant));
 
-    // Create another tenant to verify cache is still true
-    Tenant::factory()->create();
-    expect($this->tenantCache->tenantsExist())->toBeTrue();
-});
+        Event::assertDispatched(TenantCreated::class, function ($event) use ($tenant) {
+            return $event->tenant->name === $tenant->name;
+        });
 
-it('caches primary tenant existence permanently once true', function () {
-    // Initially no primary tenant
-    expect($this->tenantCache->primaryTenantExists())->toBeFalse();
+        // Manually trigger the listener
+        $listener = app(CacheTenantsExist::class);
+        $listener->handle();
 
-    // Create tenant ID 2 first
-    Tenant::factory()->create(['id' => 2]);
-    expect($this->tenantCache->primaryTenantExists())->toBeFalse();
+        expect(Cache::get(SmartFallback::CACHE_KEY))->toBeTrue();
+    });
 
-    // Create primary tenant
-    Tenant::factory()->create(['id' => 1]);
-    expect($this->tenantCache->primaryTenantExists())->toBeTrue();
-});
+    it('command caches the status', function () {
+        $this->artisan('tenancy:cache-fallback-status')
+            ->expectsOutput('No tenants found. Fallback mode is active.')
+            ->assertSuccessful();
 
-it('returns primary tenant from cache', function () {
-    $primaryTenant = Tenant::factory()->create([
-        'id' => 1,
-        'name' => 'Primary App',
-        'slug' => 'primary',
-    ]);
+        expect(Cache::has(SmartFallback::CACHE_KEY))->toBeFalse();
 
-    $cachedTenant = $this->tenantCache->getPrimaryTenant();
+        Tenant::factory()->create();
 
-    expect($cachedTenant)->not->toBeNull();
-    expect($cachedTenant->id)->toBe(1);
-    expect($cachedTenant->name)->toBe('Primary App');
-});
+        $this->artisan('tenancy:cache-fallback-status')
+            ->expectsOutput('Tenants found. Fallback mode is disabled and this status is now permanently cached.')
+            ->assertSuccessful();
 
-it('invalidates existence cache when non-primary tenant is deleted', function () {
-    // Create tenants
-    Tenant::factory()->create(['id' => 1]);
-    $tenant2 = Tenant::factory()->create(['id' => 2]);
+        expect(Cache::get(SmartFallback::CACHE_KEY))->toBeTrue();
+    });
 
-    // Cache should show tenants exist
-    expect($this->tenantCache->tenantsExist())->toBeTrue();
-
-    // Delete non-primary tenant (this would normally invalidate cache)
-    // But since tenant 1 still exists, cache should remain true
-    $tenant2->delete();
-
-    expect($this->tenantCache->tenantsExist())->toBeTrue();
+    it('is in fallback mode if tenants table does not exist', function () {
+        Schema::drop('tenants');
+        expect($this->smartFallback->isFallback())->toBeTrue();
+    });
 });

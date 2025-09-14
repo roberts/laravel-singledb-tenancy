@@ -47,11 +47,27 @@ class Tenant extends Model
             }
         });
 
+        static::created(function ($tenant) {
+            event(new \Roberts\LaravelSingledbTenancy\Events\TenantCreated($tenant));
+        });
+
         static::deleting(function ($tenant) {
             // Prevent deletion of tenant ID 1
             if ($tenant->id === 1) {
                 throw new \Exception('Cannot delete Tenant 1 since it is the primary domain.');
             }
+        });
+
+        static::deleted(function ($tenant) {
+            event(new \Roberts\LaravelSingledbTenancy\Events\TenantSuspended($tenant));
+        });
+
+        static::restored(function ($tenant) {
+            event(new \Roberts\LaravelSingledbTenancy\Events\TenantReactivated($tenant));
+        });
+        
+        static::forceDeleted(function ($tenant) {
+            event(new \Roberts\LaravelSingledbTenancy\Events\TenantDeleted($tenant));
         });
     }
 
@@ -60,7 +76,7 @@ class Tenant extends Model
      */
     public static function resolveByDomain(string $domain): ?self
     {
-        return static::where('domain', $domain)->first();
+        return static::where('domain', $domain)->whereNull('deleted_at')->first();
     }
 
     /**

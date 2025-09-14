@@ -2,61 +2,92 @@
 
 declare(strict_types=1);
 
-namespace Roberts\LaravelSingledbTenancy\Tests\Unit;
-
 use Illuminate\Foundation\Auth\User;
 use Roberts\LaravelSingledbTenancy\Services\SuperAdmin;
-use Roberts\LaravelSingledbTenancy\Tests\TestCase;
 
-class SuperAdminTest extends TestCase
-{
-    private SuperAdmin $superAdmin;
+beforeEach(function () {
+    $this->superAdmin = app(SuperAdmin::class);
+});
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->superAdmin = app(SuperAdmin::class);
-    }
-
-    /** @test */
-    public function it_returns_true_for_the_super_admin_user()
-    {
+describe('SuperAdmin Service', function () {
+    it('returns true for the super admin user', function () {
         config(['singledb-tenancy.super_admin.email' => 'super@admin.com']);
+        $superAdmin = app(SuperAdmin::class); // Get fresh instance
 
         $user = new User;
         $user->email = 'super@admin.com';
 
-        $this->assertTrue($this->superAdmin->is($user));
-    }
+        expect($superAdmin->is($user))->toBeTrue();
+    });
 
-    /** @test */
-    public function it_returns_false_for_a_regular_user()
-    {
+    it('returns false for a regular user', function () {
         config(['singledb-tenancy.super_admin.email' => 'super@admin.com']);
+        $superAdmin = app(SuperAdmin::class); // Get fresh instance
 
         $user = new User;
         $user->email = 'regular@user.com';
 
-        $this->assertFalse($this->superAdmin->is($user));
-    }
+        expect($superAdmin->is($user))->toBeFalse();
+    });
 
-    /** @test */
-    public function it_returns_false_for_a_null_user()
-    {
+    it('returns false for a null user', function () {
         config(['singledb-tenancy.super_admin.email' => 'super@admin.com']);
+        $superAdmin = app(SuperAdmin::class); // Get fresh instance
 
-        $this->assertFalse($this->superAdmin->is(null));
-    }
+        expect($superAdmin->is(null))->toBeFalse();
+    });
 
-    /** @test */
-    public function it_returns_false_if_the_super_admin_email_is_not_configured()
-    {
+    it('returns false if the super admin email is not configured', function () {
         config(['singledb-tenancy.super_admin.email' => null]);
+        $superAdmin = app(SuperAdmin::class); // Get fresh instance
 
         $user = new User;
         $user->email = 'super@admin.com';
 
-        $this->assertFalse($this->superAdmin->is($user));
-    }
-}
+        expect($superAdmin->is($user))->toBeFalse();
+    });
+
+    it('returns false if the super admin email is empty string', function () {
+        config(['singledb-tenancy.super_admin.email' => '']);
+        $superAdmin = app(SuperAdmin::class); // Get fresh instance
+
+        $user = new User;
+        $user->email = 'super@admin.com';
+
+        expect($superAdmin->is($user))->toBeFalse();
+    });
+
+    it('handles case sensitivity correctly', function () {
+        config(['singledb-tenancy.super_admin.email' => 'SUPER@ADMIN.COM']);
+        $superAdmin = app(SuperAdmin::class); // Get fresh instance
+
+        $user = new User;
+        $user->email = 'super@admin.com';
+
+        expect($superAdmin->is($user))->toBeFalse();
+    });
+
+    it('works with exact email match', function () {
+        config(['singledb-tenancy.super_admin.email' => 'super@admin.com']);
+        $superAdmin = app(SuperAdmin::class); // Get fresh instance
+
+        $user1 = new User;
+        $user1->email = 'super@admin.com';
+
+        $user2 = new User;
+        $user2->email = 'super@admin.co'; // Missing 'm'
+
+        expect($superAdmin->is($user1))->toBeTrue();
+        expect($superAdmin->is($user2))->toBeFalse();
+    });
+
+    it('handles user objects without email attribute gracefully', function () {
+        config(['singledb-tenancy.super_admin.email' => 'super@admin.com']);
+        $superAdmin = app(SuperAdmin::class); // Get fresh instance
+
+        $user = new User;
+        // Not setting email attribute
+
+        expect($superAdmin->is($user))->toBeFalse();
+    });
+});

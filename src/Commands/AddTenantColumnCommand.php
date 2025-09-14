@@ -109,17 +109,6 @@ return new class extends Migration
             \$table->foreignId('{$tenantColumn}'){$columnDefinition};{$indexDefinition}{$foreignDefinition}
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('{$table}', function (Blueprint \$table) {
-            \$table->dropForeign(['{$tenantColumn}']);
-            \$table->dropColumn('{$tenantColumn}');
-        });
-    }
 };
 PHP;
     }

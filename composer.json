@@ -44,7 +44,10 @@
         "psr-4": {
             "Roberts\\LaravelSingledbTenancy\\": "src/",
             "Roberts\\LaravelSingledbTenancy\\Database\\Factories\\": "database/factories/"
-        }
+        },
+        "files": [
+            "src/Helpers/Context.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

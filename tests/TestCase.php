@@ -31,5 +31,14 @@ class TestCase extends Orchestra
         // Load package migrations for testing
         $migration = include __DIR__.'/../database/migrations/create_tenants_table.php.stub';
         $migration->up();
+
+        // Create posts table for testing
+        $app['db']->connection()->getSchemaBuilder()->create('posts', function ($table) {
+            $table->id();
+            $table->unsignedBigInteger('tenant_id')->nullable();
+            $table->string('title');
+            $table->text('content');
+            $table->timestamps();
+        });
     }
 }

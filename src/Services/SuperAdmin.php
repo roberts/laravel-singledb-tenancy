@@ -16,7 +16,12 @@ class SuperAdmin
 
         $superAdminEmail = config('singledb-tenancy.super_admin.email');
 
-        if (! $superAdminEmail || ! property_exists($user, 'email')) {
+        if (! $superAdminEmail) {
+            return false;
+        }
+
+        // Check if user has an email attribute/property
+        if (! isset($user->email) && ! property_exists($user, 'email')) {
             return false;
         }
 

@@ -2,45 +2,35 @@
 
 declare(strict_types=1);
 
-namespace Roberts\LaravelSingledbTenancy\Tests\Feature;
-
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Queue;
 use Roberts\LaravelSingledbTenancy\Concerns\TenantAware;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 use Roberts\LaravelSingledbTenancy\Tests\Models\Post;
-use Roberts\LaravelSingledbTenancy\Tests\TestCase;
 
-class TenantAwareJobTest extends TestCase
-{
-    protected function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function () {
+    Queue::fake();
+});
 
-        Queue::fake();
-    }
+describe('TenantAware Jobs', function () {
+    describe('Job Context Preservation', function () {
+        it('restores tenant context in a queued job', function () {
+            $tenant = Tenant::factory()->create();
+            tenant_context()->set($tenant);
 
-    /** @test */
-    public function it_restores_tenant_context_in_a_queued_job()
-    {
-        $tenant = Tenant::factory()->create();
+            TestJob::dispatch();
 
-        tenant_context()->set($tenant);
+            Queue::assertPushed(TestJob::class, fn ($job) => $job->tenantId === $tenant->id);
 
-        TestJob::dispatch();
+            (new TestJob)->handle();
 
-        Queue::assertPushed(TestJob::class, function ($job) use ($tenant) {
-            return $job->tenantId === $tenant->id;
+            expect(Post::where('tenant_id', $tenant->id)
+                ->where('title', 'Created by a job')
+                ->where('content', 'This post was created by a background job.')
+                ->exists())->toBeTrue();
         });
-
-        (new TestJob)->handle();
-
-        $this->assertDatabaseHas('posts', [
-            'tenant_id' => $tenant->id,
-            'title' => 'Created by a job',
-        ]);
-    }
-}
+    });
+});
 
 class TestJob implements ShouldQueue
 {
@@ -48,6 +38,9 @@ class TestJob implements ShouldQueue
 
     public function handle()
     {
-        Post::create(['title' => 'Created by a job']);
+        Post::create([
+            'title' => 'Created by a job',
+            'content' => 'This post was created by a background job.',
+        ]);
     }
 }

@@ -10,6 +10,7 @@ use Roberts\LaravelSingledbTenancy\Context\TenantContext;
 use Roberts\LaravelSingledbTenancy\Events\TenantResolved;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 use Roberts\LaravelSingledbTenancy\Resolvers\DomainResolver;
+use Roberts\LaravelSingledbTenancy\Services\SmartFallback;
 use Roberts\LaravelSingledbTenancy\Services\TenantCache;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,7 +20,8 @@ class TenantResolutionMiddleware
     public function __construct(
         private TenantContext $tenantContext,
         private TenantCache $tenantCache,
-        private DomainResolver $domainResolver
+        private DomainResolver $domainResolver,
+        private SmartFallback $smartFallback,
     ) {}
 
     /**
@@ -27,6 +29,10 @@ class TenantResolutionMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if ($this->smartFallback->isFallback()) {
+            return $next($request);
+        }
+
         // Check for forced tenant, but only in non-production environments
         if (config('app.env') !== 'production') {
             if ($forcedTenant = $this->getForcedTenant()) {
@@ -60,6 +66,8 @@ class TenantResolutionMiddleware
             }
 
             $this->tenantContext->set($tenant);
+
+            event(new TenantResolved($tenant));
 
             return $next($request);
         }

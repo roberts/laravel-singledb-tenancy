@@ -6,106 +6,69 @@ use Roberts\LaravelSingledbTenancy\Models\Tenant;
 use Roberts\LaravelSingledbTenancy\Services\TenantCache;
 
 beforeEach(function () {
-    // Clear cache before each test
-    app(TenantCache::class)->flush();
+    $this->cache = app(TenantCache::class);
+    $this->cache->flush();
 });
 
-it('caches tenant resolution by domain', function () {
-    $tenant = Tenant::factory()->create([
-        'domain' => 'example.test',
-    ]);
+describe('Tenant Cache Service', function () {
+    describe('Domain Resolution Caching', function () {
+        it('caches tenant resolution by domain', function () {
+            $tenant = Tenant::factory()->create(['domain' => 'example.test']);
 
-    $cache = app(TenantCache::class);
+            $resolved1 = $this->cache->getTenantByDomain('example.test');
+            expect($resolved1)->not()->toBeNull()->and($resolved1->id)->toBe($tenant->id);
 
-    // First call should hit database
-    $resolved1 = $cache->getTenantByDomain('example.test');
-    expect($resolved1)->not()->toBeNull();
-    expect($resolved1->id)->toBe($tenant->id);
+            $resolved2 = $this->cache->getTenantByDomain('example.test');
+            expect($resolved2->id)->toBe($tenant->id);
+        });
 
-    // Second call should hit cache (we can't easily test this without mocking,
-    // but we can verify the result is consistent)
-    $resolved2 = $cache->getTenantByDomain('example.test');
-    expect($resolved2->id)->toBe($tenant->id);
-});
+        it('returns null when tenant not found by domain', function () {
+            expect($this->cache->getTenantByDomain('nonexistent.test'))->toBeNull();
+        });
 
-it('returns null when tenant not found by domain', function () {
-    $cache = app(TenantCache::class);
+        it('works when caching is disabled', function () {
+            config(['singledb-tenancy.caching.enabled' => false]);
+            $tenant = Tenant::factory()->create(['domain' => 'example.test']);
 
-    $resolved = $cache->getTenantByDomain('nonexistent.test');
-    expect($resolved)->toBeNull();
-});
+            $resolved = $this->cache->getTenantByDomain('example.test');
+            expect($resolved)->not()->toBeNull()->and($resolved->id)->toBe($tenant->id);
+        });
+    });
 
-it('works when caching is disabled', function () {
-    config(['singledb-tenancy.caching.enabled' => false]);
+    describe('Cache Management', function () {
+        it('forgets specific tenant cache', function () {
+            $tenant = Tenant::factory()->create(['domain' => 'example.test']);
+            $this->cache->getTenantByDomain('example.test');
+            $this->cache->forgetTenant($tenant);
 
-    $tenant = Tenant::factory()->create([
-        'domain' => 'example.test',
-    ]);
+            $resolved = $this->cache->getTenantByDomain('example.test');
+            expect($resolved)->not()->toBeNull();
+        });
+    });
 
-    $cache = app(TenantCache::class);
+    describe('Custom Routes Support', function () {
+        it('checks custom route file existence', function () {
+            config(['singledb-tenancy.caching.enabled' => false]);
 
-    $resolved = $cache->getTenantByDomain('example.test');
-    expect($resolved)->not()->toBeNull();
-    expect($resolved->id)->toBe($tenant->id);
-});
+            $routesPath = storage_path('framework/testing/tenant-routes');
+            $filePath = "{$routesPath}/example.com.php";
 
-it('forgets specific tenant cache', function () {
-    $tenant = Tenant::factory()->create([
-        'domain' => 'example.test',
-    ]);
+            if (!is_dir($routesPath)) mkdir($routesPath, 0755, true);
+            if (file_exists($filePath)) unlink($filePath);
 
-    $cache = app(TenantCache::class);
+            config(['singledb-tenancy.routing.custom_routes_path' => $routesPath]);
 
-    // Cache the tenant
-    $cache->getTenantByDomain('example.test');
+            expect(file_exists($filePath))->toBeFalse()
+                ->and($this->cache->tenantHasCustomRoutes('example.com'))->toBeFalse();
 
-    // Forget the tenant
-    $cache->forgetTenant($tenant);
+            file_put_contents($filePath, "<?php\n// Test route file\n");
 
-    // Should still resolve (from database)
-    $resolved = $cache->getTenantByDomain('example.test');
-    expect($resolved)->not()->toBeNull();
-});
+            expect(file_exists($filePath))->toBeTrue()
+                ->and($this->cache->tenantHasCustomRoutes('example.com'))->toBeTrue();
 
-it('checks custom route file existence', function () {
-    // Disable caching for this test to avoid cache pollution
-    config(['singledb-tenancy.caching.enabled' => false]);
-
-    // Create a temporary test routes directory
-    $routesPath = storage_path('framework/testing/tenant-routes');
-    if (! is_dir($routesPath)) {
-        mkdir($routesPath, 0755, true);
-    }
-
-    // Clean up any existing files first
-    $filePath = "{$routesPath}/example.com.php";
-    if (file_exists($filePath)) {
-        unlink($filePath);
-    }
-
-    config(['singledb-tenancy.routing.custom_routes_path' => $routesPath]);
-
-    $cache = app(TenantCache::class);
-
-    // Verify file doesn't exist
-    expect(file_exists($filePath))->toBeFalse();
-
-    // Should return false when file doesn't exist
-    expect($cache->tenantHasCustomRoutes('example.com'))->toBeFalse();
-
-    // Create a test route file using tenant domain
-    file_put_contents($filePath, "<?php\n// Test route file\n");
-
-    // Debug: verify file was created
-    expect(file_exists($filePath))->toBeTrue();
-    expect(config('singledb-tenancy.routing.custom_routes_path'))->toBe($routesPath);
-
-    // Should return true when file exists
-    expect($cache->tenantHasCustomRoutes('example.com'))->toBeTrue();
-
-    // Clean up
-    unlink($filePath);
-    if (is_dir($routesPath)) {
-        rmdir($routesPath);
-    }
+            // Cleanup
+            unlink($filePath);
+            if (is_dir($routesPath)) rmdir($routesPath);
+        });
+    });
 });
