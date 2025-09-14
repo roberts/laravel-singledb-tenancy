@@ -29,21 +29,6 @@ it('returns null when no domain matches', function () {
     expect($resolved)->toBeNull();
 });
 
-it('returns null when domain resolution is disabled', function () {
-    config(['singledb-tenancy.resolution.domain.enabled' => false]);
-
-    $tenant = Tenant::factory()->create([
-        'domain' => 'example.test',
-    ]);
-
-    $request = Request::create('https://example.test/dashboard');
-    $resolver = app(DomainResolver::class);
-
-    $resolved = $resolver->resolve($request);
-
-    expect($resolved)->toBeNull();
-});
-
 it('handles requests without host gracefully', function () {
     $request = new Request;
     $resolver = app(DomainResolver::class);

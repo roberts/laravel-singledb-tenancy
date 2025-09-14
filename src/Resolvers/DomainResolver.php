@@ -19,11 +19,6 @@ class DomainResolver
      */
     public function resolve(Request $request): ?Tenant
     {
-        // Check if domain resolution is enabled
-        if (! config('singledb-tenancy.resolution.domain.enabled', true)) {
-            return null;
-        }
-
         $domain = $request->getHost();
 
         if (! $domain) {
