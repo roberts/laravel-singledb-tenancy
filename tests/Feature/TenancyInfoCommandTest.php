@@ -32,17 +32,18 @@ it('displays caching configuration', function () {
 it('displays tenant statistics when database is available', function () {
     // Create some test tenants
     Tenant::factory()->count(3)->create();
-    Tenant::factory()->suspended()->create();
+    Tenant::factory()->create()->delete();
 
-    // Debug: Let's see what tenants we actually have
-    $totalCount = Tenant::count();
-    $activeCount = Tenant::whereNull('suspended_at')->count();
+    // Calculate expected counts
+    $totalCount = Tenant::withTrashed()->count();  // All tenants including soft-deleted
+    $activeCount = Tenant::count();                // Only non-soft-deleted tenants
+    $suspendedCount = $totalCount - $activeCount;   // Soft-deleted tenants
 
     $this->artisan('tenancy:info')
         ->expectsOutputToContain('Tenant Statistics:')
         ->expectsOutputToContain("Total Tenants: {$totalCount}")
         ->expectsOutputToContain("Active Tenants: {$activeCount}")
-        ->expectsOutputToContain('Suspended Tenants: '.($totalCount - $activeCount))
+        ->expectsOutputToContain("Suspended Tenants: {$suspendedCount}")
         ->assertExitCode(0);
 });
 

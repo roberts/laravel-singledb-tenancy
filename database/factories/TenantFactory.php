@@ -30,16 +30,6 @@ class TenantFactory extends Factory
     }
 
     /**
-     * Create a suspended (soft deleted) tenant.
-     */
-    public function suspended(): static
-    {
-        return $this->afterCreating(function ($tenant) {
-            $tenant->delete();
-        });
-    }
-
-    /**
      * Create a tenant with a specific domain.
      */
     public function withDomain(string $domain): static

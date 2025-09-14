@@ -55,8 +55,8 @@ class TenancyInfoCommand extends Command
         // Tenant statistics
         try {
             if (is_string($tenantModel) && class_exists($tenantModel)) {
-                $totalTenants = $tenantModel::count();
-                $activeTenants = $tenantModel::whereNull('suspended_at')->count();
+                $totalTenants = $tenantModel::withTrashed()->count();
+                $activeTenants = $tenantModel::whereNull('deleted_at')->count();
                 $suspendedTenants = $totalTenants - $activeTenants;
 
                 $this->info('Tenant Statistics:');
