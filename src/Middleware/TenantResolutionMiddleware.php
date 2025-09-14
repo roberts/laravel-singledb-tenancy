@@ -7,6 +7,7 @@ namespace Roberts\LaravelSingledbTenancy\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Roberts\LaravelSingledbTenancy\Context\TenantContext;
+use Roberts\LaravelSingledbTenancy\Events\TenantResolved;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 use Roberts\LaravelSingledbTenancy\Resolvers\DomainResolver;
 use Roberts\LaravelSingledbTenancy\Services\TenantCache;
@@ -26,11 +27,15 @@ class TenantResolutionMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Check for forced tenant in development
-        if ($forcedTenant = $this->getForcedTenant()) {
-            $this->tenantContext->set($forcedTenant);
+        // Check for forced tenant, but only in non-production environments
+        if (config('app.env') !== 'production') {
+            if ($forcedTenant = $this->getForcedTenant()) {
+                $this->tenantContext->set($forcedTenant);
 
-            return $next($request);
+                event(new TenantResolved($forcedTenant));
+
+                return $next($request);
+            }
         }
 
         // Smart Fallback Logic: Check if any tenants exist

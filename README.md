@@ -178,7 +178,7 @@ The package dispatches events to allow you to hook into the tenant lifecycle:
 - `TenantResolved`: After the tenant context is set for a request.
 - `TenantSuspended`: After a tenant is suspended.
 - `TenantReactivated`: After a tenant is reactivated.
-- `TenantDeleted`: After a tenant is permanently deleted.
+- `TenantDeleted`: After a tenant is soft deleted.
 
 You can listen for these events in your `EventServiceProvider`:
 
@@ -258,7 +258,7 @@ class CustomModel extends Model
 
 ### Custom Route Files
 
-Support tenant-specific route files in `routes/tenants/`:
+You can create tenant-specific route files in the `routes/tenants/` directory. The file name should match the tenant's domain.
 
 ```
 routes/
@@ -266,6 +266,16 @@ routes/
 └── tenants/
     ├── acme.com.php         # Routes for 'acme.com' tenant domain
     └── sub.acme.com.php   # Routes for 'sub.acme.com' tenant domain
+```
+
+**Important:** When a custom route file is found for a tenant, it **overrides** the default `routes/web.php` file. If you want to augment the default routes, you must manually include them at the botttom of your tenant's route file:
+
+```php
+// routes/tenants/acme.com.php
+Route::get('/special', ...);
+
+// Also load all the shared routes
+require base_path('routes/web.php');
 ```
 
 ### Development and Testing
@@ -506,12 +516,6 @@ return [
         'enabled' => env('TENANT_CACHE_ENABLED', true),
         'store' => env('TENANT_CACHE_STORE', 'array'),
         'ttl' => env('TENANT_CACHE_TTL', 3600),
-    ],
-    
-    // Custom routing
-    'routing' => [
-        'custom_routes_path' => base_path('routes/tenants'),
-        'include_default_routes' => true,
     ],
     
     // Error handling

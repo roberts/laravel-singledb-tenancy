@@ -42,28 +42,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Routing
-    |--------------------------------------------------------------------------
-    |
-    | Configuration for tenant-specific routing.
-    |
-    */
-    'routing' => [
-        /*
-        | Path where tenant-specific route files are stored.
-        | Files should be named using the tenant's domain (e.g., 'drewroberts.com.php' & 'subdomain.drewroberts.com.php').
-        */
-        'custom_routes_path' => base_path('routes/tenants'),
-
-        /*
-        | Whether to include the default web.php routes when a tenant
-        | has custom route files.
-        */
-        'include_default_routes' => true,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Caching
     |--------------------------------------------------------------------------
     |
@@ -127,11 +105,6 @@ return [
     |
     */
     'development' => [
-        /*
-        | Local development domains that should be treated specially.
-        */
-        'local_domains' => ['.test', '.local', '.localhost'],
-
         /*
         | Force a specific tenant domain for development/testing.
         */

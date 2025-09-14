@@ -19,23 +19,17 @@ class TenantRouteManager
      */
     public function loadTenantRoutes(?Tenant $tenant): void
     {
-        if (! $tenant) {
-            $this->loadDefaultRoutes();
+        if ($tenant) {
+            $identifier = $this->getTenantRouteIdentifier($tenant);
 
-            return;
-        }
+            if ($this->cache->tenantHasCustomRoutes($identifier)) {
+                $this->loadCustomTenantRoutes($identifier);
 
-        $identifier = $this->getTenantRouteIdentifier($tenant);
-
-        if ($this->cache->tenantHasCustomRoutes($identifier)) {
-            $this->loadCustomTenantRoutes($identifier);
-
-            if ($this->shouldIncludeDefaultRoutes()) {
-                $this->loadDefaultRoutes();
+                return;
             }
-        } else {
-            $this->loadDefaultRoutes();
         }
+
+        $this->loadDefaultRoutes();
     }
 
     /**
@@ -82,17 +76,7 @@ class TenantRouteManager
      */
     protected function getCustomRouteFilePath(string $identifier): string
     {
-        $routesPath = config('singledb-tenancy.routing.custom_routes_path', '');
-        $routesPathStr = is_string($routesPath) ? $routesPath : '';
-
-        return "{$routesPathStr}/{$identifier}.php";
+        return base_path("routes/tenants/{$identifier}.php");
     }
 
-    /**
-     * Check if default routes should be included with custom routes.
-     */
-    protected function shouldIncludeDefaultRoutes(): bool
-    {
-        return (bool) config('singledb-tenancy.routing.include_default_routes', true);
-    }
 }
