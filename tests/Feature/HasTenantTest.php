@@ -131,16 +131,6 @@ it('does not automatically assign tenant_id if already set', function () {
     expect($post->tenant_id)->toBe($tenant2->id);
 });
 
-it('allows custom tenant column name', function () {
-    // Create a custom test model with different tenant column
-    $customModel = new class extends Post
-    {
-        protected $tenantColumn = 'organization_id';
-    };
-
-    expect($customModel->getTenantColumn())->toBe('organization_id');
-});
-
 it('handles queries without tenant context gracefully', function () {
     $tenant = Tenant::factory()->create();
     tenant_context()->set($tenant);

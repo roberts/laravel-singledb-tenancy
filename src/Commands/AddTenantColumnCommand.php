@@ -27,7 +27,7 @@ class AddTenantColumnCommand extends Command
     public function handle(): int
     {
         $table = $this->argument('table');
-        $tenantColumn = config('singledb-tenancy.tenant_column', 'tenant_id');
+        $tenantColumn = 'tenant_id';
 
         // Ensure we have string values
         if (! is_string($table)) {

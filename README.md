@@ -5,20 +5,18 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/roberts/laravel-singledb-tenancy/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/roberts/laravel-singledb-tenancy/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/roberts/laravel-singledb-tenancy.svg?style=flat-square)](https://packagist.org/packages/roberts/laravel-singledb-tenancy)
 
-A comprehensive Laravel package for implementing single-database multi-tenancy with automatic data isolation, tenant resolution, and flexible routing. This package provides a complete solution for SaaS applications that need to serve multiple tenants from a single database while maintaining strict data separation.
+A Laravel package for single-database multi-tenancy. It offers automatic data isolation, tenant resolution by domain, and flexible routing, making it a complete solution for SaaS applications.
 
 ## Features
 
-- **Automatic Tenant Resolution**: Resolve tenants by domain or subdomain
-- **Smart Fallback Logic**: Automatic fallback to primary tenant when no tenant is resolved
-- **Data Isolation**: Automatic scoping of Eloquent models by tenant
-- **Tenant Context Management**: Global tenant context with helper functions
-- **Caching Support**: Optimized tenant resolution with configurable caching
-- **Custom Routes**: Support for tenant-specific route files
-- **Middleware Integration**: Easy integration with Laravel's middleware system
-- **Development Tools**: Forced tenant mode for development and testing
-- **Management Commands**: Built-in commands for tenant column migration and system inspection
-- **Comprehensive Testing**: Full test suite with 93+ tests
+- **Automatic Tenant Resolution**: Resolve tenants by domain or subdomain.
+- **Data Isolation**: Automatically scope Eloquent models to the current tenant.
+- **Tenant Context**: Global helper functions (`current_tenant()`) to access the active tenant.
+- **Smart Fallback**: Automatically fall back to a primary tenant if no tenant is resolved.
+- **Caching**: Fast tenant resolution via configurable caching.
+- **Tenant-Specific Routing**: Support for loading custom route files for each tenant.
+- **Artisan Commands**: Built-in commands for migrations and diagnostics.
+- **Forced Tenant Mode**: Simplify development and testing by forcing a specific tenant.
 
 ## Requirements
 
@@ -99,7 +97,7 @@ $tenant = Tenant::create([
 
 ### 2. Making Models Tenant-Aware
 
-Add the `HasTenant` trait to automatically scope models by tenant:
+Add the `HasTenant` trait to your models. It automatically scopes queries to the current tenant, sets the `tenant_id` on creation, and adds a `tenant()` relationship.
 
 ```php
 use Roberts\LaravelSingledbTenancy\Traits\HasTenant;

@@ -103,24 +103,6 @@ it('fails when migration already exists', function () {
         ->assertExitCode(1);
 });
 
-it('uses custom tenant column from config', function () {
-    config(['singledb-tenancy.tenant_column' => 'organization_id']);
-
-    $this->artisan('tenancy:add-column test_table')
-        ->expectsOutputToContain('Migration created successfully')
-        ->assertExitCode(0);
-
-    $migrationFiles = glob($this->migrationPath.'/*_add_organization_id_to_test_table_table.php');
-    expect($migrationFiles)->toHaveCount(1);
-
-    $migrationContent = $this->filesystem->get($migrationFiles[0]);
-    expect($migrationContent)
-        ->toContain('$table->foreignId(\'organization_id\')');
-
-    // Clean up custom migration
-    $this->filesystem->delete($migrationFiles[0]);
-});
-
 it('includes proper down method for rollback', function () {
     $this->artisan('tenancy:add-column test_table --foreign')
         ->assertExitCode(0);

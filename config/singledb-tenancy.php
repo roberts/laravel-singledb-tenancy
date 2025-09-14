@@ -4,17 +4,6 @@ declare(strict_types=1);
 
 // config for Roberts/LaravelSingledbTenancy
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Tenant Column
-    |--------------------------------------------------------------------------
-    |
-    | The column name used to store the tenant ID in tenant-aware models.
-    | This will be used by the HasTenant trait to automatically scope queries
-    | and assign tenant IDs when creating new models.
-    |
-    */
-    'tenant_column' => 'tenant_id',
 
     /*
     |--------------------------------------------------------------------------

@@ -49,7 +49,7 @@ trait HasTenant
      */
     public function getTenantColumn(): string
     {
-        return $this->tenantColumn ?? config('singledb-tenancy.tenant_column', 'tenant_id');
+        return 'tenant_id';
     }
 
     /**
