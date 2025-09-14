@@ -10,6 +10,8 @@ use Roberts\LaravelSingledbTenancy\Context\TenantContext;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 use Roberts\LaravelSingledbTenancy\Resolvers\DomainResolver;
 use Roberts\LaravelSingledbTenancy\Resolvers\SubdomainResolver;
+use Roberts\LaravelSingledbTenancy\Services\TenantCache;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 
 class TenantResolutionMiddleware
@@ -23,7 +25,8 @@ class TenantResolutionMiddleware
     ];
 
     public function __construct(
-        private TenantContext $tenantContext
+        private TenantContext $tenantContext,
+        private TenantCache $tenantCache
     ) {}
 
     /**
@@ -35,6 +38,19 @@ class TenantResolutionMiddleware
         if ($forcedTenant = $this->getForcedTenant()) {
             $this->tenantContext->set($forcedTenant);
 
+            return $next($request);
+        }
+
+        // Smart Fallback Logic: Check if any tenants exist
+        if (! $this->tenantCache->tenantsExist()) {
+            // No tenants exist - check if user explicitly wants exception handling
+            $handlingStrategy = config('singledb-tenancy.failure_handling.unresolved_tenant', 'continue');
+            
+            if ($handlingStrategy === 'exception') {
+                throw new RuntimeException('Could not resolve tenant from request');
+            }
+            
+            // Skip all tenant logic and run normally
             return $next($request);
         }
 
@@ -58,7 +74,18 @@ class TenantResolutionMiddleware
             }
         }
 
-        // No tenant resolved
+        // No tenant resolved, try fallback to tenant ID 1
+        if ($this->tenantCache->primaryTenantExists()) {
+            $primaryTenant = $this->tenantCache->getPrimaryTenant();
+            
+            if ($primaryTenant && ! $this->isTenantSuspended($primaryTenant)) {
+                $this->tenantContext->set($primaryTenant);
+                
+                return $next($request);
+            }
+        }
+
+        // No tenant resolved and no primary tenant available
         return $this->handleUnresolvedTenant($request, $next);
     }
 
@@ -79,10 +106,19 @@ class TenantResolutionMiddleware
 
     /**
      * Get default resolution strategies from config.
+     *
+     * @return array<string>
      */
     protected function getDefaultStrategies(): array
     {
-        return config('singledb-tenancy.resolution.strategies', ['domain', 'subdomain']);
+        $strategies = config('singledb-tenancy.resolution.strategies', ['domain', 'subdomain']);
+        
+        if (! is_array($strategies)) {
+            return ['domain', 'subdomain'];
+        }
+        
+        /** @var array<string> */
+        return array_filter($strategies, 'is_string');
     }
 
     /**
@@ -116,11 +152,14 @@ class TenantResolutionMiddleware
     protected function handleSuspendedTenant(Tenant $tenant, Request $request): Response
     {
         $handling = config('singledb-tenancy.failure_handling.suspended_tenant', 'show_page');
+        
+        $redirectRoute = config('singledb-tenancy.failure_handling.redirect_route', 'home');
+        $suspendedView = config('singledb-tenancy.failure_handling.suspended_view', 'tenant.suspended');
 
         return match ($handling) {
-            'redirect' => redirect()->route(config('singledb-tenancy.failure_handling.redirect_route', 'home')),
+            'redirect' => redirect()->route(is_string($redirectRoute) ? $redirectRoute : 'home'),
             'block' => abort(403, 'Tenant is suspended'),
-            default => response()->view(config('singledb-tenancy.failure_handling.suspended_view', 'tenant.suspended'), [
+            default => response()->view(is_string($suspendedView) ? $suspendedView : 'tenant.suspended', [
                 'tenant' => $tenant,
             ], 503),
         };
@@ -132,10 +171,11 @@ class TenantResolutionMiddleware
     protected function handleUnresolvedTenant(Request $request, Closure $next): Response
     {
         $handling = config('singledb-tenancy.failure_handling.unresolved_tenant', 'continue');
+        $redirectRoute = config('singledb-tenancy.failure_handling.redirect_route', 'home');
 
         return match ($handling) {
             'exception' => throw new \RuntimeException('Could not resolve tenant from request'),
-            'redirect' => redirect()->route(config('singledb-tenancy.failure_handling.redirect_route', 'home')),
+            'redirect' => redirect()->route(is_string($redirectRoute) ? $redirectRoute : 'home'),
             default => $next($request), // continue without tenant context
         };
     }

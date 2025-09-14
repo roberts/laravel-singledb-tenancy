@@ -7,6 +7,7 @@ namespace Roberts\LaravelSingledbTenancy\Scopes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use Roberts\LaravelSingledbTenancy\Services\TenantCache;
 
 class TenantScope implements Scope
 {
@@ -15,13 +16,21 @@ class TenantScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
+        // Get TenantCache instance to check if tenants exist
+        $tenantCache = app(TenantCache::class);
+        
+        // If no tenants exist in the system, don't apply any scoping
+        if (! $tenantCache->tenantsExist()) {
+            return;
+        }
+
         $tenantId = current_tenant_id();
 
         if ($tenantId !== null) {
             $tenantColumn = $this->getTenantColumn($model);
             $builder->where($model->qualifyColumn($tenantColumn), $tenantId);
         } else {
-            // When no tenant context is set, return no results by default
+            // When tenants exist but no tenant context is set, return no results by default
             // This enforces tenant isolation - data should only be accessible with proper tenant context
             $builder->whereRaw('1 = 0');
         }
@@ -36,11 +45,14 @@ class TenantScope implements Scope
             return $model->getTenantColumn();
         }
 
-        return config('singledb-tenancy.tenant_column', 'tenant_id');
+        $column = config('singledb-tenancy.tenant_column', 'tenant_id');
+        return is_string($column) ? $column : 'tenant_id';
     }
 
     /**
      * Extend the query builder with the needed functions.
+     *
+     * @param Builder<Model> $builder
      */
     public function extend(Builder $builder): void
     {

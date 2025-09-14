@@ -161,9 +161,9 @@ return [
     'failure_handling' => [
         /*
         | What to do when tenant cannot be resolved.
-        | Options: 'continue', 'exception', 'redirect'
+        | Options: 'fallback', 'continue', 'exception', 'redirect'
         */
-        'unresolved_tenant' => 'continue',
+        'unresolved_tenant' => 'fallback',
 
         /*
         | What to do when tenant is suspended/inactive.

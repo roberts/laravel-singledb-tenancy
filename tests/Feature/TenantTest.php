@@ -30,7 +30,7 @@ it('can resolve tenant by domain', function () {
 });
 
 it('can suspend and reactivate tenant', function () {
-    $tenant = Tenant::factory()->create();
+    $tenant = Tenant::factory()->create(['id' => 2]); // Use ID 2 to avoid deletion protection
 
     expect($tenant->isActive())->toBeTrue();
 
@@ -49,6 +49,7 @@ it('can suspend and reactivate tenant', function () {
 
 it('does not resolve suspended tenants', function () {
     $tenant = Tenant::factory()->create([
+        'id' => 2, // Use ID 2 to avoid deletion protection
         'domain' => 'suspended.test',
     ]);
 

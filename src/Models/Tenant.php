@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
  */
 class Tenant extends Model
 {
+    /** @use HasFactory<\Roberts\LaravelSingledbTenancy\Database\Factories\TenantFactory> */
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
@@ -45,6 +46,13 @@ class Tenant extends Model
                 $tenant->slug = Str::slug($tenant->name);
             }
         });
+
+        static::deleting(function ($tenant) {
+            // Prevent deletion of tenant ID 1
+            if ($tenant->id === 1) {
+                throw new \Exception('Tenant ID 1 cannot be deleted as it serves as the primary fallback tenant.');
+            }
+        });
     }
 
     /**
@@ -57,6 +65,9 @@ class Tenant extends Model
 
     /**
      * Scope for active (non-deleted) tenants.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder<static> $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
      */
     public function scopeActive($query)
     {
@@ -76,7 +87,7 @@ class Tenant extends Model
      */
     public function suspend(): bool
     {
-        return $this->delete();
+        return (bool) $this->delete();
     }
 
     /**
@@ -99,6 +110,8 @@ class Tenant extends Model
 
     /**
      * Get the factory for this model.
+     *
+     * @return \Roberts\LaravelSingledbTenancy\Database\Factories\TenantFactory
      */
     protected static function newFactory()
     {

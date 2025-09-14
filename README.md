@@ -10,13 +10,15 @@ A comprehensive Laravel package for implementing single-database multi-tenancy w
 ## Features
 
 - **Automatic Tenant Resolution**: Resolve tenants by domain or subdomain
+- **Smart Fallback Logic**: Automatic fallback to primary tenant when no tenant is resolved
 - **Data Isolation**: Automatic scoping of Eloquent models by tenant
 - **Tenant Context Management**: Global tenant context with helper functions
 - **Caching Support**: Optimized tenant resolution with configurable caching
 - **Custom Routes**: Support for tenant-specific route files
 - **Middleware Integration**: Easy integration with Laravel's middleware system
 - **Development Tools**: Forced tenant mode for development and testing
-- **Comprehensive Testing**: Full test suite with 64+ tests
+- **Management Commands**: Built-in commands for tenant column migration and system inspection
+- **Comprehensive Testing**: Full test suite with 93+ tests
 
 ## Requirements
 
@@ -80,9 +82,20 @@ The package provides extensive configuration options in `config/singledb-tenancy
 
 ```php
 'failure_handling' => [
-    'unresolved_tenant' => 'continue', // continue|exception|redirect
+    'unresolved_tenant' => 'fallback', // fallback|continue|exception|redirect
     'suspended_tenant' => 'show_page', // show_page|redirect|block
     'suspended_view' => 'tenant.suspended',
+],
+```
+
+### Smart Fallback Logic
+
+```php
+'fallback' => [
+    'enabled' => true,
+    'primary_tenant_id' => 1,
+    'skip_when_no_tenants' => true,
+    'respect_suspension' => true,
 ],
 ```
 
@@ -109,7 +122,7 @@ $tenant = Tenant::create([
 
 ### 2. Making Models Tenant-Aware
 
-Add the `HasTenant` trait to your models:
+Add the `HasTenant` trait to automatically scope models by tenant:
 
 ```php
 use Roberts\LaravelSingledbTenancy\Traits\HasTenant;
@@ -122,10 +135,7 @@ class Post extends Model
 }
 ```
 
-The trait automatically:
-- Applies tenant scoping to all queries
-- Sets the tenant_id when creating new models
-- Provides a `tenant()` relationship
+This automatically applies tenant scoping to queries, sets tenant_id on creation, and provides a `tenant()` relationship.
 
 ### 3. Setting Up Middleware
 
@@ -216,14 +226,14 @@ class CustomModel extends Model
 
 ### Custom Route Files
 
-The package supports tenant-specific route files. Create route files in `routes/tenants/`:
+Support tenant-specific route files in `routes/tenants/`:
 
 ```
 routes/
-├── web.php              # Default routes for all tenants
+├── web.php              # Default routes
 └── tenants/
-    ├── acme.php         # Custom routes for 'acme' tenant
-    └── enterprise.php   # Custom routes for 'enterprise' tenant
+    ├── acme.php         # Routes for 'acme' tenant
+    └── enterprise.php   # Routes for 'enterprise' tenant
 ```
 
 Configure custom routing:
@@ -240,23 +250,17 @@ Configure custom routing:
 
 Force a specific tenant during development:
 
-```php
-// .env
+```bash
+# .env
 FORCE_TENANT_SLUG=dev-tenant
-
-// All requests will resolve to the 'dev-tenant'
 ```
 
-Disable tenant resolution for specific tests:
+Disable tenant resolution for tests that need to see all data:
 
 ```php
-public function test_admin_can_see_all_data()
-{
-    tenant_context()->runWithout(function () {
-        // Test code that should see all tenant data
-        $this->assertCount(10, Post::all());
-    });
-}
+tenant_context()->runWithout(function () {
+    $this->assertCount(10, Post::all()); // All tenant data
+});
 ```
 
 ## Tenant Resolution
@@ -290,15 +294,82 @@ When multiple strategies are enabled, resolution follows this order:
 1. **Domain resolution** - Exact domain match
 2. **Subdomain resolution** - Subdomain extraction and slug match
 
+If no tenant is resolved, the Smart Fallback Logic can automatically fallback to a designated primary tenant.
+
+## Smart Fallback Logic
+
+The Smart Fallback Logic provides automatic fallback to a primary tenant when normal resolution fails. This ensures your application always has a valid tenant context, which is particularly useful for shared content or landing pages.
+
+### How It Works
+
+1. **Normal Resolution**: First attempts standard domain/subdomain resolution
+2. **Fallback Check**: If no tenant is found and fallback is enabled, checks for primary tenant
+3. **Primary Tenant**: Falls back to tenant with ID 1 (configurable)
+4. **Smart Skipping**: Automatically skips fallback when no tenants exist in the database
+5. **Suspension Respect**: Won't fallback to suspended primary tenant
+
+### Configuration
+
+```php
+'failure_handling' => [
+    'unresolved_tenant' => 'fallback', // Enable fallback mode
+],
+
+'fallback' => [
+    'enabled' => true,                 // Enable/disable fallback logic
+    'primary_tenant_id' => 1,          // ID of primary tenant
+    'skip_when_no_tenants' => true,    // Skip when database is empty
+    'respect_suspension' => true,      // Don't fallback to suspended tenant
+],
+```
+
+### Caching Behavior
+
+- Primary tenant existence is cached permanently once confirmed
+- Cache is invalidated when tenants are deleted
+- Tenant existence cache prevents unnecessary database queries
+
+### Use Cases
+
+- **Landing Pages**: Serve shared content when no tenant is specified
+- **Marketing Sites**: Display default content for non-tenant visitors  
+- **Development**: Consistent behavior during application setup
+- **Error Recovery**: Graceful handling of misconfigured domains
+
+## Management Commands
+
+The package includes helpful Artisan commands for managing your tenancy setup:
+
+### Add Tenant Column Command
+
+Quickly add tenant_id columns to existing tables with proper foreign key constraints:
+
+```bash
+# Add tenant_id column to posts table
+php artisan tenancy:add-tenant-column posts
+
+# Add with custom options
+php artisan tenancy:add-tenant-column posts --nullable --index --column=organization_id
+```
+
+### Tenancy Info Command
+
+Display comprehensive information about your tenancy configuration and current state:
+
+```bash
+php artisan tenancy:info
+```
+
+This command shows:
+- Resolution strategy status
+- Caching configuration
+- Current tenant context
+- Database tenant statistics
+- Smart Fallback Logic settings
+
 ### Caching
 
-Tenant resolution results are automatically cached to improve performance:
-
-- Domain to tenant mapping
-- Subdomain to tenant mapping  
-- Custom route file existence
-
-Cache is automatically invalidated when tenants are created, updated, or deleted.
+Tenant resolution results are cached automatically to improve performance. Cache is invalidated when tenants are modified.
 
 ## Error Handling
 
@@ -306,6 +377,7 @@ Cache is automatically invalidated when tenants are created, updated, or deleted
 
 When no tenant can be resolved from the request:
 
+- `fallback` - Use Smart Fallback Logic to primary tenant
 - `continue` - Continue without tenant context
 - `exception` - Throw RuntimeException
 - `redirect` - Redirect to specified route
@@ -320,17 +392,12 @@ When a tenant is suspended (soft deleted):
 
 ## Testing
 
-The package includes comprehensive tests covering all functionality:
+Run the comprehensive test suite:
 
 ```bash
-# Run tests
-composer test
-
-# Run tests with coverage
-composer test:coverage
-
-# Run static analysis
-composer analyse
+composer test                # Run tests  
+composer test:coverage       # Run with coverage
+composer analyse             # Static analysis
 ```
 
 Test your tenant-aware code:
@@ -354,7 +421,7 @@ class PostTest extends TestCase
         // Verify isolation
         tenant_context()->set($tenant1);
         $this->assertCount(1, Post::all());
-                $this->assertEquals('Tenant 1 Post', Post::first()->title);
+        $this->assertEquals('Tenant 1 Post', Post::first()->title);
     }
 }
 ```
@@ -466,10 +533,18 @@ return [
     
     // Error handling
     'failure_handling' => [
-        'unresolved_tenant' => 'continue', // continue|exception|redirect
+        'unresolved_tenant' => 'fallback', // fallback|continue|exception|redirect
         'suspended_tenant' => 'show_page', // show_page|redirect|block
         'suspended_view' => 'tenant.suspended',
         'redirect_route' => 'tenant.select',
+    ],
+    
+    // Smart Fallback Logic
+    'fallback' => [
+        'enabled' => true,
+        'primary_tenant_id' => 1,
+        'skip_when_no_tenants' => true,
+        'respect_suspension' => true,
     ],
 ];
 ```
@@ -491,25 +566,18 @@ FORCE_TENANT_SLUG=dev-tenant
 
 ## Migration
 
-This package includes a tenant migration that creates the `tenants` table:
-
-```php
-Schema::create('tenants', function (Blueprint $table) {
-    $table->id();
-    $table->string('name');
-    $table->string('slug')->unique();
-    $table->string('domain')->nullable()->unique();
-    $table->timestamps();
-    $table->softDeletes('suspended_at');
-});
-```
-
 Add `tenant_id` to your existing tables:
 
 ```php
 Schema::table('posts', function (Blueprint $table) {
     $table->foreignId('tenant_id')->constrained();
 });
+```
+
+Or use the built-in command:
+
+```bash
+php artisan tenancy:add-tenant-column posts
 ```
 
 ## Best Practices
@@ -523,27 +591,10 @@ Schema::table('posts', function (Blueprint $table) {
 
 ## Troubleshooting
 
-### Common Issues
-
-**Tenant not resolving correctly**
-- Verify middleware is applied to routes
-- Check domain/subdomain configuration
-- Ensure tenant exists in database
-
-**Data appearing across tenants**
-- Confirm HasTenant trait is applied to models
-- Check tenant context is set properly
-- Verify foreign key constraints
-
-**Cache not working**
-- Verify cache store configuration
-- Check cache driver is properly configured
-- Clear cache if stale data persists
-
-**Custom routes not loading**
-- Verify route file naming matches configuration
-- Check custom routes path exists
-- Ensure route files have proper PHP syntax
+**Tenant not resolving**: Verify middleware is applied, check configuration, ensure tenant exists
+**Data leaking between tenants**: Confirm HasTenant trait usage and tenant context
+**Cache issues**: Verify cache configuration and clear stale data
+**Custom routes not loading**: Check file naming, path existence, and syntax
 
 ## Changelog
 

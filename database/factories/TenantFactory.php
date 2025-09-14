@@ -6,10 +6,17 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
 
+/**
+ * @extends Factory<Tenant>
+ */
 class TenantFactory extends Factory
 {
     protected $model = Tenant::class;
 
+    /**
+     * @return array<string, string>
+     * @phpstan-ignore-next-line method.childReturnType
+     */
     public function definition(): array
     {
         $name = $this->faker->company();

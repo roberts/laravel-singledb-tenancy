@@ -37,6 +37,6 @@ class DomainResolver
      */
     protected function isEnabled(): bool
     {
-        return config('singledb-tenancy.resolution.domain.enabled', true);
+        return (bool) config('singledb-tenancy.resolution.domain.enabled', true);
     }
 }

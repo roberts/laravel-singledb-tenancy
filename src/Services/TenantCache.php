@@ -106,8 +106,9 @@ class TenantCache
         /** @var class-string<Tenant> $tenantModel */
         $tenantModel = config('singledb-tenancy.tenant_model');
         $column = config('singledb-tenancy.resolution.domain.column', 'domain');
+        $columnStr = is_string($column) ? $column : 'domain';
 
-        return $tenantModel::where($column, $domain)->first();
+        return $tenantModel::where($columnStr, $domain)->first();
     }
 
     /**
@@ -118,8 +119,9 @@ class TenantCache
         /** @var class-string<Tenant> $tenantModel */
         $tenantModel = config('singledb-tenancy.tenant_model');
         $column = config('singledb-tenancy.resolution.subdomain.column', 'slug');
+        $columnStr = is_string($column) ? $column : 'slug';
 
-        return $tenantModel::where($column, $slug)->first();
+        return $tenantModel::where($columnStr, $slug)->first();
     }
 
     /**
@@ -127,20 +129,28 @@ class TenantCache
      */
     protected function checkCustomRouteFile(string $identifier): bool
     {
-        $routesPath = config('singledb-tenancy.routing.custom_routes_path');
+        $routesPath = config('singledb-tenancy.routing.custom_routes_path', '');
+        $routesPathStr = is_string($routesPath) ? $routesPath : '';
         $filename = "{$identifier}.php";
 
-        return file_exists("{$routesPath}/{$filename}");
+        if (empty($routesPathStr)) {
+            return false;
+        }
+
+        return file_exists("{$routesPathStr}/{$filename}");
     }
 
     /**
      * Get cache instance.
+     *
+     * @return \Illuminate\Contracts\Cache\Repository
      */
     protected function getCache()
     {
-        $store = config('singledb-tenancy.caching.store', 'array'); // Use array as fallback for testing
+        $store = config('singledb-tenancy.caching.store', 'array');
+        $storeStr = is_string($store) ? $store : 'array';
 
-        return $this->cache->store($store);
+        return $this->cache->store($storeStr);
     }
 
     /**
@@ -148,7 +158,7 @@ class TenantCache
      */
     protected function isCacheEnabled(): bool
     {
-        return config('singledb-tenancy.caching.enabled', true);
+        return (bool) config('singledb-tenancy.caching.enabled', true);
     }
 
     /**
@@ -156,15 +166,34 @@ class TenantCache
      */
     protected function getCacheTtl(): int
     {
-        return config('singledb-tenancy.caching.ttl', 3600);
+        $ttl = config('singledb-tenancy.caching.ttl', 3600);
+        return is_int($ttl) ? $ttl : 3600;
     }
 
     /**
      * Get cache tags.
+     *
+     * @return array<string>
      */
     protected function getCacheTags(): array
     {
-        return config('singledb-tenancy.caching.tags', ['tenant_resolution']);
+        $tags = config('singledb-tenancy.caching.tags', ['tenant_resolution']);
+        
+        if (! is_array($tags)) {
+            return ['tenant_resolution'];
+        }
+        
+        /** @var array<string> */
+        return array_filter($tags, 'is_string');
+    }
+
+    /**
+     * Get config value as string with fallback.
+     */
+    private function getConfigString(string $key, string $default = ''): string
+    {
+        $value = config($key, $default);
+        return is_string($value) ? $value : $default;
     }
 
     /**
@@ -172,9 +201,95 @@ class TenantCache
      */
     protected function getDomainCacheKey(string $domain): string
     {
-        $prefix = config('singledb-tenancy.caching.key_prefix', 'tenant_resolution:');
+        $prefix = $this->getConfigString('singledb-tenancy.caching.key_prefix', 'tenant_resolution:');
 
         return "{$prefix}domain:{$domain}";
+    }
+
+    /**
+     * Check if any tenants exist (permanently cached once true).
+     */
+    public function tenantsExist(): bool
+    {
+        if (! $this->isCacheEnabled()) {
+            return $this->resolveTenantsExist();
+        }
+
+        $key = $this->getTenantExistenceKey();
+
+        // Check cache first
+        $cached = $this->getCache()->get($key);
+        if ($cached === true) {
+            return true;
+        }
+
+        // If not cached or false, check database
+        $exists = $this->resolveTenantsExist();
+        
+        // If tenants exist, cache permanently (no TTL)
+        if ($exists) {
+            $this->getCache()->forever($key, true);
+        }
+
+        return $exists;
+    }
+
+    /**
+     * Check if tenant ID 1 exists (permanently cached once true).
+     */
+    public function primaryTenantExists(): bool
+    {
+        if (! $this->isCacheEnabled()) {
+            return $this->resolvePrimaryTenantExists();
+        }
+
+        $key = $this->getPrimaryTenantKey();
+
+        // Check cache first
+        $cached = $this->getCache()->get($key);
+        if ($cached === true) {
+            return true;
+        }
+
+        // If not cached or false, check database
+        $exists = $this->resolvePrimaryTenantExists();
+        
+        // If tenant 1 exists, cache permanently (no TTL)
+        if ($exists) {
+            $this->getCache()->forever($key, true);
+        }
+
+        return $exists;
+    }
+
+    /**
+     * Get primary tenant (ID 1) from cache or database.
+     */
+    public function getPrimaryTenant(): ?Tenant
+    {
+        if (! $this->isCacheEnabled()) {
+            return $this->resolvePrimaryTenant();
+        }
+
+        $key = $this->getPrimaryTenantModelKey();
+
+        return $this->getCache()->remember($key, $this->getCacheTtl(), function () {
+            return $this->resolvePrimaryTenant();
+        });
+    }
+
+    /**
+     * Invalidate tenant existence cache (called when tenants are deleted).
+     */
+    public function invalidateExistenceCache(): void
+    {
+        if (! $this->isCacheEnabled()) {
+            return;
+        }
+
+        $this->getCache()->forget($this->getTenantExistenceKey());
+        
+        // Note: We don't invalidate primary tenant cache since it can't be deleted
     }
 
     /**
@@ -182,7 +297,7 @@ class TenantCache
      */
     protected function getSlugCacheKey(string $slug): string
     {
-        $prefix = config('singledb-tenancy.caching.key_prefix', 'tenant_resolution:');
+        $prefix = $this->getConfigString('singledb-tenancy.caching.key_prefix', 'tenant_resolution:');
 
         return "{$prefix}slug:{$slug}";
     }
@@ -192,8 +307,80 @@ class TenantCache
      */
     protected function getCustomRoutesCacheKey(string $identifier): string
     {
-        $prefix = config('singledb-tenancy.caching.key_prefix', 'tenant_resolution:');
+        $prefix = $this->getConfigString('singledb-tenancy.caching.key_prefix', 'tenant_resolution:');
 
         return "{$prefix}routes:{$identifier}";
+    }
+
+    /**
+     * Get cache key for tenant existence check.
+     */
+    protected function getTenantExistenceKey(): string
+    {
+        $prefix = $this->getConfigString('singledb-tenancy.caching.key_prefix', 'tenant_resolution:');
+
+        return "{$prefix}tenants_exist";
+    }
+
+    /**
+     * Get cache key for primary tenant existence check.
+     */
+    protected function getPrimaryTenantKey(): string
+    {
+        $prefix = $this->getConfigString('singledb-tenancy.caching.key_prefix', 'tenant_resolution:');
+
+        return "{$prefix}primary_tenant_exists";
+    }
+
+    /**
+     * Get cache key for primary tenant model.
+     */
+    protected function getPrimaryTenantModelKey(): string
+    {
+        $prefix = $this->getConfigString('singledb-tenancy.caching.key_prefix', 'tenant_resolution:');
+
+        return "{$prefix}primary_tenant_model";
+    }
+
+    /**
+     * Resolve if any tenants exist from database.
+     */
+    protected function resolveTenantsExist(): bool
+    {
+        $tenantModel = config('singledb-tenancy.tenant_model', Tenant::class);
+
+        if (is_string($tenantModel) && class_exists($tenantModel)) {
+            return $tenantModel::exists();
+        }
+        
+        return false;
+    }
+
+    /**
+     * Resolve if primary tenant exists from database.
+     */
+    protected function resolvePrimaryTenantExists(): bool
+    {
+        $tenantModel = config('singledb-tenancy.tenant_model', Tenant::class);
+
+        if (is_string($tenantModel) && class_exists($tenantModel)) {
+            return $tenantModel::where('id', 1)->exists();
+        }
+        
+        return false;
+    }
+
+    /**
+     * Resolve primary tenant from database.
+     */
+    protected function resolvePrimaryTenant(): ?Tenant
+    {
+        $tenantModel = config('singledb-tenancy.tenant_model', Tenant::class);
+
+        if (is_string($tenantModel) && class_exists($tenantModel)) {
+            return $tenantModel::find(1);
+        }
+        
+        return null;
     }
 }

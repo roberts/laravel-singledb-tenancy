@@ -86,15 +86,25 @@ class SubdomainResolver
      */
     protected function getBaseDomain(): string
     {
-        return config('singledb-tenancy.resolution.subdomain.base_domain', 'localhost');
+        $domain = config('singledb-tenancy.resolution.subdomain.base_domain', 'localhost');
+        return is_string($domain) ? $domain : 'localhost';
     }
 
     /**
      * Get reserved subdomains from configuration.
+     *
+     * @return array<string>
      */
     protected function getReservedSubdomains(): array
     {
-        return config('singledb-tenancy.resolution.subdomain.reserved', []);
+        $reserved = config('singledb-tenancy.resolution.subdomain.reserved', []);
+        
+        if (! is_array($reserved)) {
+            return [];
+        }
+        
+        /** @var array<string> */
+        return array_filter($reserved, 'is_string');
     }
 
     /**
@@ -102,6 +112,6 @@ class SubdomainResolver
      */
     protected function isEnabled(): bool
     {
-        return config('singledb-tenancy.resolution.subdomain.enabled', true);
+        return (bool) config('singledb-tenancy.resolution.subdomain.enabled', true);
     }
 }

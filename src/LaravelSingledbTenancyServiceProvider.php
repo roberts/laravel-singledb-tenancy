@@ -3,7 +3,8 @@
 namespace Roberts\LaravelSingledbTenancy;
 
 use Illuminate\Routing\Router;
-use Roberts\LaravelSingledbTenancy\Commands\LaravelSingledbTenancyCommand;
+use Roberts\LaravelSingledbTenancy\Commands\AddTenantColumnCommand;
+use Roberts\LaravelSingledbTenancy\Commands\TenancyInfoCommand;
 use Roberts\LaravelSingledbTenancy\Context\TenantContext;
 use Roberts\LaravelSingledbTenancy\Middleware\TenantResolutionMiddleware;
 use Roberts\LaravelSingledbTenancy\Resolvers\DomainResolver;
@@ -27,7 +28,10 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews()
             ->hasMigration('create_tenants_table')
-            ->hasCommand(LaravelSingledbTenancyCommand::class);
+            ->hasCommands([
+                AddTenantColumnCommand::class,
+                TenancyInfoCommand::class,
+            ]);
     }
 
     public function packageRegistered(): void
@@ -51,6 +55,9 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
 
         // Register middleware
         $this->registerMiddleware();
+        
+        // Register observers
+        $this->registerObservers();
     }
 
     /**
@@ -61,5 +68,17 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
         $router = $this->app->make(Router::class);
 
         $router->aliasMiddleware('tenant', TenantResolutionMiddleware::class);
+    }
+
+    /**
+     * Register model observers.
+     */
+    protected function registerObservers(): void
+    {
+        $tenantModel = config('singledb-tenancy.tenant_model', \Roberts\LaravelSingledbTenancy\Models\Tenant::class);
+        
+        if (is_string($tenantModel) && class_exists($tenantModel)) {
+            $tenantModel::observe(\Roberts\LaravelSingledbTenancy\Observers\TenantObserver::class);
+        }
     }
 }

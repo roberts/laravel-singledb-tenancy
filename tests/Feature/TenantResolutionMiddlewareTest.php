@@ -80,7 +80,17 @@ it('continues without tenant when none resolved and handling is continue', funct
 
 it('throws exception when no tenant resolved and handling is exception', function () {
     config(['singledb-tenancy.failure_handling.unresolved_tenant' => 'exception']);
-
+    
+    // Ensure no tenants exist in database so Smart Fallback Logic won't apply
+    // Use withTrashed to clear all including soft deleted ones
+    Tenant::withTrashed()->forceDelete();
+    
+    // Clear cache to ensure we're not getting cached results
+    app(\Roberts\LaravelSingledbTenancy\Services\TenantCache::class)->invalidateExistenceCache();
+    
+    // Verify no tenants exist
+    expect(Tenant::count())->toBe(0);
+    
     $request = Request::create('https://nonexistent.com/dashboard');
     $middleware = app(TenantResolutionMiddleware::class);
 
@@ -129,6 +139,7 @@ it('handles suspended tenant by showing page', function () {
     ]);
 
     $tenant = Tenant::factory()->create([
+        'id' => 2, // Use ID 2 to avoid deletion protection
         'domain' => 'example.com',
     ]);
 
@@ -152,6 +163,7 @@ it('handles suspended tenant by blocking access', function () {
     config(['singledb-tenancy.failure_handling.suspended_tenant' => 'block']);
 
     $tenant = Tenant::factory()->create([
+        'id' => 2, // Use ID 2 to avoid deletion protection
         'domain' => 'example.com',
     ]);
 

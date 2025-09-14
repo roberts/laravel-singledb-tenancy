@@ -87,9 +87,10 @@ class TenantRouteManager
      */
     protected function getCustomRouteFilePath(string $identifier): string
     {
-        $routesPath = config('singledb-tenancy.routing.custom_routes_path');
+        $routesPath = config('singledb-tenancy.routing.custom_routes_path', '');
+        $routesPathStr = is_string($routesPath) ? $routesPath : '';
 
-        return "{$routesPath}/{$identifier}.php";
+        return "{$routesPathStr}/{$identifier}.php";
     }
 
     /**
@@ -97,6 +98,6 @@ class TenantRouteManager
      */
     protected function shouldIncludeDefaultRoutes(): bool
     {
-        return config('singledb-tenancy.routing.include_default_routes', true);
+        return (bool) config('singledb-tenancy.routing.include_default_routes', true);
     }
 }
