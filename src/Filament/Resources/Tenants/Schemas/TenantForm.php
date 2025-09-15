@@ -3,7 +3,6 @@
 namespace Roberts\LaravelSingledbTenancy\Filament\Resources\Tenants\Schemas;
 
 use Filament\Forms\Components\TextInput;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
 
 class TenantForm
