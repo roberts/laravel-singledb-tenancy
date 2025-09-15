@@ -12,3 +12,7 @@ All notable changes to `laravel-singledb-tenancy` will be documented in this fil
 - add tenant context helpers
 - add tenant events
 - add 5 core functionality commands
+
+## 12.1.0 - 2025-09-15
+
+- add tenant filament resource
