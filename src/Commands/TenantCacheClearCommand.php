@@ -17,10 +17,11 @@ class TenantCacheClearCommand extends Command
     {
         $cache = app(TenantCache::class);
 
+        /** @var string|null $tenantOption */
         $tenantOption = $this->option('tenant');
-        if ($tenantOption) {
-            if (! is_string($tenantOption)) {
-                $this->error('Tenant option must be a string');
+        if ($tenantOption !== null) {
+            if (empty($tenantOption)) {
+                $this->error('Tenant option must be a non-empty string');
 
                 return self::FAILURE;
             }
