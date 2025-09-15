@@ -51,4 +51,11 @@ class TenantResource extends Resource
             'edit' => EditTenant::route('/{record:slug}/edit'),
         ];
     }
+
+    public static function getMiddleware(): array
+    {
+        return [
+            'auth.primary',
+        ];
+    }
 }
