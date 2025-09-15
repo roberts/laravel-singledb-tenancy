@@ -2,6 +2,7 @@
 
 namespace Roberts\LaravelSingledbTenancy;
 
+use Filament\Facades\Filament;
 use Roberts\LaravelSingledbTenancy\Commands\AddTenantColumnCommand;
 use Roberts\LaravelSingledbTenancy\Commands\CacheFallbackStatusCommand;
 use Roberts\LaravelSingledbTenancy\Commands\TenancyInfoCommand;
@@ -9,6 +10,7 @@ use Roberts\LaravelSingledbTenancy\Commands\TenantAwareCommand;
 use Roberts\LaravelSingledbTenancy\Commands\TenantCacheClearCommand;
 use Roberts\LaravelSingledbTenancy\Context\TenantContext;
 use Roberts\LaravelSingledbTenancy\Events\TenantCreated;
+use Roberts\LaravelSingledbTenancy\Filament\LaravelSingledbTenancyPlugin;
 use Roberts\LaravelSingledbTenancy\Listeners\CacheTenantsExist;
 use Roberts\LaravelSingledbTenancy\Middleware\AuthorizePrimaryTenant;
 use Roberts\LaravelSingledbTenancy\Middleware\TenantResolutionMiddleware;
@@ -65,5 +67,35 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
 
         // Register the TenantObserver
         Tenant::observe(TenantObserver::class);
+
+        // Auto-register Filament plugin if Filament is available
+        $this->registerFilamentPlugin();
+    }
+
+    protected function registerFilamentPlugin(): void
+    {
+        if (! class_exists('Filament\Facades\Filament')) {
+            return;
+        }
+
+        // Use booted callback to register plugin with panels after they're configured
+        $this->app->booted(function () {
+            if (! class_exists('Filament\Facades\Filament')) {
+                return;
+            }
+
+            try {
+                $panels = \Filament\Facades\Filament::getPanels();
+
+                foreach ($panels as $panel) {
+                    if (! $panel->hasPlugin('roberts-laravel-singledb-tenancy')) {
+                        $panel->plugin(LaravelSingledbTenancyPlugin::make());
+                    }
+                }
+            } catch (\Exception $e) {
+                // Silently fail if Filament is not properly configured
+                // This can happen during static analysis or testing
+            }
+        });
     }
 }

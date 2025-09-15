@@ -21,6 +21,8 @@ class TestCase extends Orchestra
     {
         return [
             LaravelSingledbTenancyServiceProvider::class,
+            \Livewire\LivewireServiceProvider::class,
+            \Filament\FilamentServiceProvider::class,
         ];
     }
 
