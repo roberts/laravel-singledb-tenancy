@@ -86,7 +86,7 @@ class LaravelSingledbTenancyServiceProvider extends PackageServiceProvider
 
             try {
                 $panels = \Filament\Facades\Filament::getPanels();
-                
+
                 foreach ($panels as $panel) {
                     if (! $panel->hasPlugin('roberts-laravel-singledb-tenancy')) {
                         $panel->plugin(LaravelSingledbTenancyPlugin::make());
