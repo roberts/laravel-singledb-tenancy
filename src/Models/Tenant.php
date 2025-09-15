@@ -80,6 +80,14 @@ class Tenant extends Model
     }
 
     /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
      * Scope for active (non-deleted) tenants.
      *
      * @param  \Illuminate\Database\Eloquent\Builder<static>  $query

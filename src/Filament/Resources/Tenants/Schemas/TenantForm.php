@@ -31,23 +31,13 @@ class TenantForm
                     ->maxLength(255)
                     ->unique(ignoreRecord: true)
                     ->rules(['regex:/^[a-z0-9-]+$/'])
-                    ->helperText('Used for subdomain and routing. Only lowercase letters, numbers, and hyphens allowed.'),
+                    ->helperText('Used for internal routes. Only lowercase letters, numbers, and hyphens allowed.'),
 
                 TextInput::make('domain')
                     ->label('Domain')
                     ->maxLength(255)
                     ->url()
                     ->helperText('Full domain URL for this tenant (optional).'),
-
-                TextEntry::make('created_at')
-                    ->label('Created at')
-                    ->state(fn ($record): string => $record?->created_at?->diffForHumans() ?? '-')
-                    ->visibleOn('edit'),
-
-                TextEntry::make('updated_at')
-                    ->label('Last modified at')
-                    ->state(fn ($record): string => $record?->updated_at?->diffForHumans() ?? '-')
-                    ->visibleOn('edit'),
             ]);
     }
 }
