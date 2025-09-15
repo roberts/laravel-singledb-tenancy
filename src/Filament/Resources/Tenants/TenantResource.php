@@ -7,12 +7,15 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Auth;
 use Roberts\LaravelSingledbTenancy\Filament\Resources\Tenants\Pages\CreateTenant;
 use Roberts\LaravelSingledbTenancy\Filament\Resources\Tenants\Pages\EditTenant;
 use Roberts\LaravelSingledbTenancy\Filament\Resources\Tenants\Pages\ListTenants;
 use Roberts\LaravelSingledbTenancy\Filament\Resources\Tenants\Schemas\TenantForm;
 use Roberts\LaravelSingledbTenancy\Filament\Resources\Tenants\Tables\TenantsTable;
 use Roberts\LaravelSingledbTenancy\Models\Tenant;
+use Roberts\LaravelSingledbTenancy\Services\SuperAdmin;
 
 class TenantResource extends Resource
 {
@@ -57,5 +60,26 @@ class TenantResource extends Resource
         return [
             'auth.primary',
         ];
+    }
+
+    public static function canAccess(): bool
+    {
+        return static::canAccessResource();
+    }
+
+    public static function canAccessResource(): bool
+    {
+        $user = Auth::user();
+        
+        if (! $user) {
+            return false;
+        }
+
+        return app(SuperAdmin::class)->is($user);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccessResource();
     }
 }
