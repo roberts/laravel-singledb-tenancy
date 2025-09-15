@@ -7,7 +7,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
 use Roberts\LaravelSingledbTenancy\Filament\Resources\Tenants\Pages\CreateTenant;
 use Roberts\LaravelSingledbTenancy\Filament\Resources\Tenants\Pages\EditTenant;
@@ -70,7 +69,7 @@ class TenantResource extends Resource
     public static function canAccessResource(): bool
     {
         $user = Auth::user();
-        
+
         if (! $user) {
             return false;
         }
