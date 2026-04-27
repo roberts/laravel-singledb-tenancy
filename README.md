@@ -20,8 +20,8 @@ A Laravel package for single-database multi-tenancy. It offers automatic data is
 
 ## Requirements
 
-- PHP 8.4+
-- Laravel 12.0+
+- PHP 8.5+
+- Laravel 13.0+
 
 ## Installation
 
