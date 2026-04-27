@@ -13,3 +13,8 @@ All notable changes to `laravel-singledb-tenancy` will be documented in this fil
 - add tenant events
 - add 5 core functionality commands
 - add tenant filament resource
+
+## 2.0.0 - 2026-04-27
+
+- upgrade to php 8.5
+- upgrade to laravel 13
